@@ -24,8 +24,8 @@ public class AuthorService implements CrudService<AuthorRequestDTO, AuthorRespon
 	private final AuthorMapper authorMapper;
 
 	public AuthorService(
-			AuthorRepository authorRepository,
-			AuthorMapper authorMapper
+		AuthorRepository authorRepository,
+		AuthorMapper authorMapper
 	) {
 		this.authorRepository = authorRepository;
 		this.authorMapper = authorMapper;
@@ -33,73 +33,73 @@ public class AuthorService implements CrudService<AuthorRequestDTO, AuthorRespon
 
 	@Transactional(readOnly = true)
 	public PageResponse<AuthorResponseDTO> searchAuthorsByName(
-			String name, int page, int size
+		final String name, final int page, final int size
 	) {
 
 		if (name == null || name.trim().isEmpty()) {
 			return new PageResponse<>(
-					List.of(),
-					page,
-					size,
-					0L,
-					0,
-					true,
-					true
+				List.of(),
+				page,
+				size,
+				0L,
+				0,
+				true,
+				true
 			);
 		}
 
 		Pageable pageable = PageRequest.of(
-				page,
-				size,
-				Sort.by("lastName").ascending()
-						.and(Sort.by("firstName").ascending())
+			page,
+			size,
+			Sort.by("lastName").ascending()
+				.and(Sort.by("firstName").ascending())
 		);
 
 		Page<Author> authors = authorRepository.findAllByFullNameContainingIgnoreCase(name, pageable);
 		List<AuthorResponseDTO> authorResponseDTOS = authors.stream()
-				.map(authorMapper::toDTO)
-				.toList();
+			.map(authorMapper::toDTO)
+			.toList();
 
 		return new PageResponse<>(
-				authorResponseDTOS,
-				authors.getNumber(),
-				authors.getSize(),
-				authors.getTotalElements(),
-				authors.getTotalPages(),
-				authors.isFirst(),
-				authors.isLast()
+			authorResponseDTOS,
+			authors.getNumber(),
+			authors.getSize(),
+			authors.getTotalElements(),
+			authors.getTotalPages(),
+			authors.isFirst(),
+			authors.isLast()
 		);
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public AuthorResponseDTO getById(Long id) {
+	public AuthorResponseDTO getById(final Long id) {
 
 		return authorRepository.findById(id)
-				.map(authorMapper::toDTO)
-				.orElseThrow(() -> new ResourceNotFoundException("Author not found"));
+			.map(authorMapper::toDTO)
+			.orElseThrow(() -> new ResourceNotFoundException("Author not found"));
 	}
 
 	@Override
 	@Transactional
 	public AuthorResponseDTO create(
-			AuthorRequestDTO authorRequestDTO
+		final AuthorRequestDTO authorRequestDTO
 	) {
 
 		if (
-				authorRepository
-						.existsByFullNameIgnoreCase(
-								authorRequestDTO.firstName() + " " + authorRequestDTO.lastName()
-						)
+			authorRepository
+				.existsByFullNameIgnoreCase(
+					authorRequestDTO.firstName() + " " + authorRequestDTO.lastName()
+				)
 		) {
 
 			throw new ResourceAlreadyExistsException("Author already exists");
 		}
 
 		Author author = new Author(
-				authorRequestDTO.firstName(),
-				authorRequestDTO.lastName(),
-				authorRequestDTO.type()
+			authorRequestDTO.firstName(),
+			authorRequestDTO.lastName(),
+			authorRequestDTO.type()
 		);
 
 		Author savedAuthor = authorRepository.save(author);
@@ -107,13 +107,17 @@ public class AuthorService implements CrudService<AuthorRequestDTO, AuthorRespon
 		return authorMapper.toDTO(savedAuthor);
 	}
 
-	/** Not supported — authors are immutable reference data. */
+	/**
+	 * Not supported — authors are immutable reference data.
+	 */
 	@Override
 	public AuthorResponseDTO update(Long id, AuthorRequestDTO request) {
 		throw new UnsupportedOperationException("Author update is not supported");
 	}
 
-	/** Not supported — authors are immutable reference data. */
+	/**
+	 * Not supported — authors are immutable reference data.
+	 */
 	@Override
 	public void delete(Long id) {
 		throw new UnsupportedOperationException("Author deletion is not supported");

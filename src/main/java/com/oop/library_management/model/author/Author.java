@@ -28,13 +28,13 @@ public class Author extends BaseEntity {
 	@NotNull(message = "Author type is required")
 	private AuthorType type;
 
-	public Author() {
+	protected Author() {
 	}
 
 	public Author(
-			String firstName,
-			String lastName,
-			AuthorType type
+		String firstName,
+		String lastName,
+		AuthorType type
 	) {
 
 		this.firstName = firstName;
@@ -51,10 +51,6 @@ public class Author extends BaseEntity {
 		this.type = type;
 	}
 
-	public void setFullName(String fullName) {
-		this.fullName = fullName;
-	}
-
 	public AuthorType getType() {
 		return type;
 	}
@@ -67,19 +63,23 @@ public class Author extends BaseEntity {
 		return firstName;
 	}
 
+	public void setFirstName(String firstName) {
+		this.firstName = firstName;
+	}
+
 	public String getLastName() {
 		return lastName;
+	}
+
+	public void setLastName(String lastName) {
+		this.lastName = lastName;
 	}
 
 	public String getFullName() {
 		return this.fullName;
 	}
 
-	public void setFirstName(String firstName) {
-		this.firstName = firstName;
-	}
-
-	public void setLastName(String lastName) {
-		this.lastName = lastName;
+	public void setFullName(String fullName) {
+		this.fullName = fullName;
 	}
 }

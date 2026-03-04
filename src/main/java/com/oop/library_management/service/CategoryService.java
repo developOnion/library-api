@@ -24,8 +24,8 @@ public class CategoryService implements CrudService<CategoryRequestDTO, Category
 	private final CategoryMapper categoryMapper;
 
 	public CategoryService(
-			CategoryRepository categoryRepository,
-			CategoryMapper categoryMapper
+		CategoryRepository categoryRepository,
+		CategoryMapper categoryMapper
 	) {
 		this.categoryRepository = categoryRepository;
 		this.categoryMapper = categoryMapper;
@@ -33,55 +33,55 @@ public class CategoryService implements CrudService<CategoryRequestDTO, Category
 
 	@Transactional(readOnly = true)
 	public PageResponse<CategoryResponseDTO> searchCategoriesByName(
-			int page,
-			int size,
-			String name
+		int page,
+		int size,
+		String name
 	) {
 
 		if (name == null || name.isEmpty()) {
 			return new PageResponse<>(
-					List.of(),
-					page,
-					size,
-					0L,
-					0,
-					true,
-					true
+				List.of(),
+				page,
+				size,
+				0L,
+				0,
+				true,
+				true
 			);
 		}
 
 		Pageable pageable = PageRequest.of(
-				page,
-				size,
-				Sort.by("createdAt").descending()
-						.and(Sort.by("name").ascending())
+			page,
+			size,
+			Sort.by("createdAt").descending()
+				.and(Sort.by("name").ascending())
 		);
 
 		Page<Category> categories = categoryRepository.findAllByNameContainingIgnoreCase(name, pageable);
 		List<CategoryResponseDTO> categoryResponseDTOS = categories.stream()
-				.map(categoryMapper::toDTO)
-				.toList();
+			.map(categoryMapper::toDTO)
+			.toList();
 
 		return new PageResponse<>(
-				categoryResponseDTOS,
-				categories.getNumber(),
-				categories.getSize(),
-				categories.getTotalElements(),
-				categories.getTotalPages(),
-				categories.isFirst(),
-				categories.isLast()
+			categoryResponseDTOS,
+			categories.getNumber(),
+			categories.getSize(),
+			categories.getTotalElements(),
+			categories.getTotalPages(),
+			categories.isFirst(),
+			categories.isLast()
 		);
 	}
 
 	@Override
 	@Transactional
 	public CategoryResponseDTO create(
-			CategoryRequestDTO categoryRequestDTO
+		CategoryRequestDTO categoryRequestDTO
 	) {
 
 		if (
-				categoryRepository
-						.existsByNameIgnoreCase(categoryRequestDTO.name())
+			categoryRepository
+				.existsByNameIgnoreCase(categoryRequestDTO.name())
 		) {
 
 			throw new ResourceAlreadyExistsException("Category already exists");
@@ -98,17 +98,21 @@ public class CategoryService implements CrudService<CategoryRequestDTO, Category
 	public CategoryResponseDTO getById(Long id) {
 
 		return categoryRepository.findById(id)
-				.map(categoryMapper::toDTO)
-				.orElseThrow(() -> new ResourceNotFoundException("Category not found"));
+			.map(categoryMapper::toDTO)
+			.orElseThrow(() -> new ResourceNotFoundException("Category not found"));
 	}
 
-	/** Not supported — categories are immutable reference data. */
+	/**
+	 * Not supported — categories are immutable reference data.
+	 */
 	@Override
 	public CategoryResponseDTO update(Long id, CategoryRequestDTO request) {
 		throw new UnsupportedOperationException("Category update is not supported");
 	}
 
-	/** Not supported — categories are immutable reference data. */
+	/**
+	 * Not supported — categories are immutable reference data.
+	 */
 	@Override
 	public void delete(Long id) {
 		throw new UnsupportedOperationException("Category deletion is not supported");
