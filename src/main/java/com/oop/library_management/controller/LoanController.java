@@ -59,8 +59,25 @@ public class LoanController {
         return ResponseEntity.ok().body(response);
     }
 
+    @GetMapping("/history")
+    @PreAuthorize("hasAuthority('LIBRARIAN')")
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseEntity<PageResponse<LoanHistoryResponseDTO>> getLoanHistory(
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "0") int page
+    ) {
+        PageResponse<LoanHistoryResponseDTO> response;
+        if(status != null && !status.trim().isEmpty()) {
+            response = loanService.getLoanHistory(status, page);
+        } else {
+            response = loanService.getLoanHistory(page);
+        }
+        return ResponseEntity.ok().body(response);
+    }
+
     @GetMapping("/history/{userId}")
     @PreAuthorize("hasAuthority('LIBRARIAN') or (hasAuthority('MEMBER') and #userId == authentication.principal.id)")
+    @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<PageResponse<LoanHistoryResponseDTO>> getLoanHistory(
             @PathVariable Long userId,
             @RequestParam(required = false) String status,

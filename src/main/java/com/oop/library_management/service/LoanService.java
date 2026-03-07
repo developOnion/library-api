@@ -40,6 +40,7 @@ public class LoanService {
     private final LoanMapper loanMapper;
     private final LibrarianRepository librarianRepository;
     private final LoanHistoryMapper loanHistoryMapper;
+    private static final int PAGE_SIZE = 10;
 
     public LoanService(MemberRepository memberRepository, BookRepository bookRepository, LoanRepository loanRepository, LoanMapper loanMapper, LibrarianRepository librarianRepository, LoanHistoryMapper loanHistoryMapper) {
         this.memberRepository = memberRepository;
@@ -77,6 +78,24 @@ public class LoanService {
 				loans.isLast()
 		);
 	}
+
+    private PageResponse<LoanHistoryResponseDTO> buildPageResponse(Page<Loan> loan){
+        List<LoanHistoryResponseDTO> loanHistory = loan.getContent().
+                stream()
+                .map(loanHistoryMapper::toDTO)
+                .toList();
+        
+        return new PageResponse<>(
+            loanHistory,
+            loan.getNumber(),
+            loan.getSize(),
+            loan.getTotalElements(),
+            loan.getTotalPages(),
+            loan.isFirst(),
+            loan.isLast()
+        );
+    }
+
 
     public BorrowResponseDTO borrowBook(BorrowRequestDTO borrowRequestDTO) {
         
@@ -176,6 +195,7 @@ public class LoanService {
         return response;
     }
 
+    // Get loan with userId
     public PageResponse<LoanHistoryResponseDTO> getLoanHistory(long userId, int page) {
 
         //validation
@@ -183,26 +203,13 @@ public class LoanService {
             throw new ResourceNotFoundException("Member with ID " + userId + " does not exist.");
         }
 
-        // Implement loan history retrieval logic based on userId, status, and page
-        Pageable pageable = PageRequest.of(page, 10); // Adjust page size as needed
+        Pageable pageable = PageRequest.of(page, PAGE_SIZE);
         Page<Loan> loans = loanRepository.findByMember_Id(userId, pageable);
-        List<LoanHistoryResponseDTO> loanHistory = loans.getContent().
-                stream()
-                .map(loanHistoryMapper::toDTO)
-                .toList();
-        
-        return new PageResponse<>(
-            loanHistory,
-            loans.getNumber(),
-            loans.getSize(),
-            loans.getTotalElements(),
-            loans.getTotalPages(),
-            loans.isFirst(),
-            loans.isLast()
-        );
-
+        return buildPageResponse(loans);
     }
 
+
+    // Get loan with userId and filter with status
     public PageResponse<LoanHistoryResponseDTO> getLoanHistory(long userId, String status, int page) {
 
         //validation
@@ -217,23 +224,34 @@ public class LoanService {
             throw new IllegalArgumentException("Invalid loan status: " + status);
         }
 
-        // Implement loan history retrieval logic based on userId, status, and page
-        Pageable pageable = PageRequest.of(page, 10); // Adjust page size as needed
+        Pageable pageable = PageRequest.of(page, PAGE_SIZE);
         Page<Loan> loans = loanRepository.findByMember_IdAndStatus(userId, loanStatus, pageable);
-        List<LoanHistoryResponseDTO> loanHistory = loans.getContent().
-                stream()
-                .map(loanHistoryMapper::toDTO)
-                .toList();
-        
-        return new PageResponse<>(
-            loanHistory,
-            loans.getNumber(),
-            loans.getSize(),
-            loans.getTotalElements(),
-            loans.getTotalPages(),
-            loans.isFirst(),
-            loans.isLast()
-        );
+
+        return buildPageResponse(loans);
     }
 
+
+    // get all loan from all user and filter with status
+    public PageResponse<LoanHistoryResponseDTO> getLoanHistory(String status, int page) {
+
+        LoanStatus loanStatus;
+        try {
+            loanStatus = LoanStatus.valueOf(status.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid loan status: " + status);
+        }
+
+        Pageable pageable = PageRequest.of(page, PAGE_SIZE);
+        Page<Loan> loans = loanRepository.findByStatus(loanStatus, pageable);
+        return buildPageResponse(loans);
+    }
+
+
+    // get all loan from all user
+    public PageResponse<LoanHistoryResponseDTO> getLoanHistory(int page) {
+
+        Pageable pageable = PageRequest.of(page, PAGE_SIZE);
+        Page<Loan> loans = loanRepository.findAll(pageable);
+        return buildPageResponse(loans);
+    }
 }
