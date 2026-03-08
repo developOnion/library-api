@@ -30,11 +30,9 @@ public interface LoanRepository extends JpaRepository<Loan, Long> {
 
 	Optional<Loan> findFirstByMember_IdAndBook_IdAndStatusNot(Long memberId, Long bookId, LoanStatus status);
 
-	@Query("SELECT l FROM Loan l WHERE l.member.id = :memberId AND l.book.id = :bookId AND l.status != :status ORDER BY l.loanDate ASC limit :limit")
-	List<Loan> findTopByMember_IdAndBook_IdAndStatusNot(@Param("memberId") Long memberId, @Param("bookId") Long bookId, @Param("status") LoanStatus status, @Param("limit") int limit);
+	List<Loan> findByMember_IdAndBook_IdAndStatusNotOrderByLoanDateAsc(Long memberId, Long bookId, LoanStatus status, Pageable pageable);
 
 	Page<Loan> findByMember_Id(Long memberId, Pageable pageable);
-
 	Page<Loan> findByMember_IdAndStatus(Long memberId, LoanStatus status, Pageable pageable);
 
 	Page<Loan> findByStatus(LoanStatus status, Pageable pageable);
