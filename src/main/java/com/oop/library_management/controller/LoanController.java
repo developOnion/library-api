@@ -64,13 +64,14 @@ public class LoanController {
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<PageResponse<LoanHistoryResponseDTO>> getLoanHistory(
             @RequestParam(required = false) String status,
-            @RequestParam(defaultValue = "0") int page
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
     ) {
         PageResponse<LoanHistoryResponseDTO> response;
         if(status != null && !status.trim().isEmpty()) {
-            response = loanService.getLoanHistory(status, page);
+            response = loanService.getLoanHistory(status, page, size);
         } else {
-            response = loanService.getLoanHistory(page);
+            response = loanService.getLoanHistory(page, size);
         }
         return ResponseEntity.ok().body(response);
     }
@@ -81,13 +82,14 @@ public class LoanController {
     public ResponseEntity<PageResponse<LoanHistoryResponseDTO>> getLoanHistory(
             @PathVariable Long userId,
             @RequestParam(required = false) String status,
-            @RequestParam(defaultValue = "0") int page
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
     ) {
         PageResponse<LoanHistoryResponseDTO> response;
         if(status != null && !status.trim().isEmpty()) {
-            response = loanService.getLoanHistory(userId, status, page);
+            response = loanService.getLoanHistory(userId, status, page, size);
         } else {
-            response = loanService.getLoanHistory(userId, page);
+            response = loanService.getLoanHistory(userId, page, size);
         }
         return ResponseEntity.ok().body(response);
     }
