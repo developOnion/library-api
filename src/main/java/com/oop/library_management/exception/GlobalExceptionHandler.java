@@ -53,9 +53,9 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
 	}
 
-	@ExceptionHandler(InsufficientTotalCopiesException.class)
+	@ExceptionHandler(InsufficientAmount.class)
 	public ResponseEntity<ErrorResponseDTO> handleInsufficientTotalCopiesException(
-			InsufficientTotalCopiesException ex
+			InsufficientAmount ex
 	) {
 
 		ErrorResponseDTO error = createErrorResponse(

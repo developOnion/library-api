@@ -50,11 +50,12 @@ public class Loan extends BaseEntity {
     // Required by JPA
   }
 
-  public Loan(Member member, Book book, LocalDate loanDate, LocalDate dueDate) {
+  public Loan(Member member, Book book, LocalDate loanDate, LocalDate dueDate, Librarian librarian) {
     this.member = member;
     this.book = book;
     this.loanDate = loanDate;
     this.dueDate = dueDate;
+    this.librarian = librarian;
     this.status = LoanStatus.BORROWED;
   }
 
