@@ -13,6 +13,7 @@ public record BorrowRequestDTO(
     List<BookAmount> bookAmounts,
 
     @NotNull(message = "Loan period in days is required")
+    @Min(value = 1, message = "Loan period must be at least 1 day")
     @Max(value = 7, message = "Loan period cannot exceed 7 days")
     Integer periodDays
 ) {
