@@ -39,15 +39,7 @@ public class Author extends BaseEntity {
 
 		this.firstName = firstName;
 		this.lastName = lastName;
-
-		if (firstName != null && lastName != null) {
-			this.fullName = firstName + " " + lastName;
-		} else if (firstName != null) {
-			this.fullName = firstName;
-		} else if (lastName != null) {
-			this.fullName = lastName;
-		}
-
+		updateFullName();
 		this.type = type;
 	}
 
@@ -65,6 +57,7 @@ public class Author extends BaseEntity {
 
 	public void setFirstName(String firstName) {
 		this.firstName = firstName;
+		updateFullName();
 	}
 
 	public String getLastName() {
@@ -73,13 +66,21 @@ public class Author extends BaseEntity {
 
 	public void setLastName(String lastName) {
 		this.lastName = lastName;
+		updateFullName();
 	}
 
 	public String getFullName() {
 		return this.fullName;
 	}
 
-	public void setFullName(String fullName) {
-		this.fullName = fullName;
+	public void updateFullName() {
+
+		if (this.firstName != null && this.lastName != null) {
+			this.fullName = this.firstName + " " + this.lastName;
+		} else if (this.firstName != null) {
+			this.fullName = this.firstName;
+		} else if (this.lastName != null) {
+			this.fullName = this.lastName;
+		}
 	}
 }

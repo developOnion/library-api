@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
-public class AuthorService implements CrudService<AuthorRequestDTO, AuthorResponseDTO> {
+public class AuthorService implements CrudService<AuthorRequestDTO, AuthorResponseDTO>, SearchableService<String, AuthorResponseDTO> {
 
 	private final AuthorRepository authorRepository;
 	private final AuthorMapper authorMapper;
@@ -32,11 +32,10 @@ public class AuthorService implements CrudService<AuthorRequestDTO, AuthorRespon
 	}
 
 	@Transactional(readOnly = true)
-	public PageResponse<AuthorResponseDTO> searchAuthorsByName(
-		final String name, final int page, final int size
-	) {
+	@Override
+	public PageResponse<AuthorResponseDTO> search(String criteria, int page, int size) {
 
-		if (name == null || name.trim().isEmpty()) {
+		if (criteria == null || criteria.trim().isEmpty()) {
 			return new PageResponse<>(
 				List.of(),
 				page,
@@ -55,7 +54,7 @@ public class AuthorService implements CrudService<AuthorRequestDTO, AuthorRespon
 				.and(Sort.by("firstName").ascending())
 		);
 
-		Page<Author> authors = authorRepository.findAllByFullNameContainingIgnoreCase(name, pageable);
+		Page<Author> authors = authorRepository.findAllByFullNameContainingIgnoreCase(criteria, pageable);
 		List<AuthorResponseDTO> authorResponseDTOS = authors.stream()
 			.map(authorMapper::toDTO)
 			.toList();

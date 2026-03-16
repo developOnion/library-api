@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
-public class CategoryService implements CrudService<CategoryRequestDTO, CategoryResponseDTO> {
+public class CategoryService implements CrudService<CategoryRequestDTO, CategoryResponseDTO>, SearchableService<String, CategoryResponseDTO> {
 
 	private final CategoryRepository categoryRepository;
 	private final CategoryMapper categoryMapper;
@@ -32,13 +32,10 @@ public class CategoryService implements CrudService<CategoryRequestDTO, Category
 	}
 
 	@Transactional(readOnly = true)
-	public PageResponse<CategoryResponseDTO> searchCategoriesByName(
-		int page,
-		int size,
-		String name
-	) {
+	@Override
+	public PageResponse<CategoryResponseDTO> search(String criteria, int page, int size) {
 
-		if (name == null || name.isEmpty()) {
+		if (criteria == null || criteria.isEmpty()) {
 			return new PageResponse<>(
 				List.of(),
 				page,
@@ -57,7 +54,7 @@ public class CategoryService implements CrudService<CategoryRequestDTO, Category
 				.and(Sort.by("name").ascending())
 		);
 
-		Page<Category> categories = categoryRepository.findAllByNameContainingIgnoreCase(name, pageable);
+		Page<Category> categories = categoryRepository.findAllByNameContainingIgnoreCase(criteria, pageable);
 		List<CategoryResponseDTO> categoryResponseDTOS = categories.stream()
 			.map(categoryMapper::toDTO)
 			.toList();
