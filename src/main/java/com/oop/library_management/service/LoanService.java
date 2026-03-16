@@ -49,135 +49,18 @@ public class LoanService {
 	}
 
 	@Transactional(readOnly = true)
-	public PageResponse<LoanHistoryResponseDTO> findLoanById(
-		Long userId,
-		int page,
-		int size
-	) {
+	public PageResponse<LoanHistoryResponseDTO> findLoanById(Long userId, int page, int size) {
 
-		Pageable pageable = PageRequest.of(
-			page,
-			size,
-			Sort.by("loanDate").descending()
-		);
+		Pageable pageable = PageRequest.of(page, size, Sort.by("loanDate").descending());
 		Page<Loan> loans = loanRepository.findByMember_Id(userId, pageable);
-		List<LoanHistoryResponseDTO> bookResponseDTOs = loans.stream()
-			.map(loanHistoryMapper::toDTO)
-			.toList();
+		List<LoanHistoryResponseDTO> bookResponseDTOs = loans.stream().map(loanHistoryMapper::toDTO).toList();
 
-		return new PageResponse<>(
-			bookResponseDTOs,
-			loans.getNumber(),
-			loans.getSize(),
-			loans.getTotalElements(),
-			loans.getTotalPages(),
-			loans.isFirst(),
-			loans.isLast()
-		);
-	}
-
-
-	@Transactional
-	public BorrowResponseDTO borrowBook(BorrowRequestDTO borrowRequestDTO) {
-
-		Integer amount = 0;
-		for (BookAmount bookAmount : borrowRequestDTO.bookAmounts()) {
-			amount += bookAmount.amount();
-		}
-		if (amount > 5) {
-			throw new InsufficientAmount("Cannot borrow more than 5 books at a time.");
-		}
-
-
-		//  Validation
-		Member member = memberRepository.findByMembershipNumber(borrowRequestDTO.membershipNumber())
-			.orElseThrow(() -> new ResourceNotFoundException("Member with membership number " + borrowRequestDTO.membershipNumber() + " does not exist."));
-
-		List<Long> bookIds = borrowRequestDTO.bookAmounts().stream().map(BookAmount::bookId).toList();
-		List<Book> books = bookRepository.findAllById(bookIds);
-		if (books.size() != bookIds.size()) {
-			throw new ResourceNotFoundException("One or more books do not exist.");
-		}
-		for (BookAmount bookAmount : borrowRequestDTO.bookAmounts()) {
-			Long bookId = bookAmount.bookId();
-			Book book = books.stream().filter(b -> b.getId().equals(bookId)).findFirst()
-				.orElseThrow(() -> new ResourceNotFoundException("Book with ID " + bookId + " does not exist."));
-			if (bookAmount.amount() > book.getAvailableCopies()) {
-				throw new InsufficientAmount("Book with ID " + bookId + " is not available for borrowing.");
-			}
-		}
-
-		if (amount + loanRepository.countLoanByMember_IdAndStatusNot(member.getId(), LoanStatus.RETURNED) > 5) {
-			throw new InsufficientAmount("Borrowing these books would exceed the limit of 5 books per member.");
-		}
-
-		BorrowResponseDTO response = new BorrowResponseDTO(new ArrayList<>());
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-
-		String username = authentication.getPrincipal() instanceof UserPrincipal userPrincipal
-			? userPrincipal.getUsername()
-			: authentication.getName();
-
-		Librarian librarian = librarianRepository.findByUsername(username)
-			.orElseThrow(() -> new ResourceNotFoundException("Librarian with username " + username + " does not exist."));
-
-		// After validation, just loan out the books
-		for (BookAmount bookAmount : borrowRequestDTO.bookAmounts()) {
-			Book book = books.stream().filter(b -> b.getId().equals(bookAmount.bookId())).findFirst()
-				.orElseThrow(() -> new ResourceNotFoundException("Book with ID " + bookAmount.bookId() + " does not exist."));
-			for (int i = 0; i < bookAmount.amount(); i++) {
-				Loan loan = new Loan(member, book, LocalDate.now(), LocalDate.now().plusDays(borrowRequestDTO.periodDays()), librarian);
-
-				loanRepository.save(loan);
-				response.loans().add(loanMapper.toDTO(loan));
-			}
-			book.setAvailableCopies(book.getAvailableCopies() - bookAmount.amount());
-			bookRepository.save(book);
-		}
-		return response;
-	}
-
-	@Transactional
-	public BorrowResponseDTO returnBook(ReturnRequestDTO returnRequestDTO) {
-		Member member = memberRepository.findByMembershipNumber(returnRequestDTO.membershipNumber())
-			.orElseThrow(() -> new ResourceNotFoundException("Member with membership number " + returnRequestDTO.membershipNumber() + " does not exist."));
-
-		for (BookAmount bookAmount : returnRequestDTO.bookAmounts()) {
-			Long bookId = bookAmount.bookId();
-			if (!bookRepository.existsByIdAndIsbnIsNull(bookId)) {
-				throw new ResourceNotFoundException("Book with ID " + bookId + " does not exist.");
-			}
-			if (bookAmount.amount() > loanRepository.countLoanByMember_IdAndBook_IdAndStatusNot(member.getId(), bookId, LoanStatus.RETURNED)) {
-				throw new InsufficientAmount("Book with ID " + bookId + " is not available for returning.");
-			}
-		}
-
-		BorrowResponseDTO response = new BorrowResponseDTO(new ArrayList<>());
-		for (BookAmount bookAmount : returnRequestDTO.bookAmounts()) {
-			List<Loan> loans = loanRepository.findTopByMember_IdAndBook_IdAndStatusNot(member.getId(), bookAmount.bookId(), LoanStatus.RETURNED, bookAmount.amount());
-
-			Book book = loans.get(0).getBook();
-			book.setAvailableCopies(book.getAvailableCopies() + bookAmount.amount());
-			bookRepository.save(book);
-
-			loans.forEach(loan -> {
-				loan.setReturnDate(LocalDate.now());
-				loan.setStatus(LoanStatus.RETURNED);
-			});
-
-			loanRepository.saveAll(loans);
-
-			loans.forEach(loan -> {
-				response.loans().add(loanMapper.toDTO(loan));
-			});
-		}
-		return response;
+		return new PageResponse<>(bookResponseDTOs, loans.getNumber(), loans.getSize(), loans.getTotalElements(), loans.getTotalPages(), loans.isFirst(), loans.isLast());
 	}
 
 	// Get loan with userId
 	@Transactional(readOnly = true)
-	public PageResponse<LoanHistoryResponseDTO> getLoanHistory(long userId, int page, int size) {
+	public PageResponse<LoanHistoryResponseDTO> getLoanHistoryByUserId(Long userId, int page, int size) {
 
 		//validation
 		if (!memberRepository.existsById(userId)) {
@@ -189,10 +72,9 @@ public class LoanService {
 		return loanMapper.buildPageResponse(loans);
 	}
 
-
 	// Get loan with userId and filter with status
 	@Transactional(readOnly = true)
-	public PageResponse<LoanHistoryResponseDTO> getLoanHistory(long userId, String status, int page, int size) {
+	public PageResponse<LoanHistoryResponseDTO> getLoanHistoryByUserId(Long userId, String status, int page, int size) {
 
 		//validation
 		if (!memberRepository.existsById(userId)) {
@@ -210,6 +92,97 @@ public class LoanService {
 		Page<Loan> loans = loanRepository.findByMember_IdAndStatus(userId, loanStatus, pageable);
 
 		return loanMapper.buildPageResponse(loans);
+	}
+
+
+	@Transactional
+	public BorrowResponseDTO borrowBook(BorrowRequestDTO borrowRequestDTO) {
+
+		Integer amount = 0;
+		for (BookAmount bookAmount : borrowRequestDTO.bookAmounts()) {
+			amount += bookAmount.amount();
+		}
+		if (amount > 5) {
+			throw new InsufficientAmount("Cannot borrow more than 5 books at a time.");
+		}
+
+		//  Validation
+		Member member = memberRepository.findByMembershipNumber(borrowRequestDTO.membershipNumber()).orElseThrow(() -> new ResourceNotFoundException("Member with membership number " + borrowRequestDTO.membershipNumber() + " does not exist."));
+
+		List<Long> bookIds = borrowRequestDTO.bookAmounts().stream().map(BookAmount::bookId).toList();
+		List<Book> books = bookRepository.findAllById(bookIds);
+		if (books.size() != bookIds.size()) {
+			throw new ResourceNotFoundException("One or more books do not exist.");
+		}
+		for (BookAmount bookAmount : borrowRequestDTO.bookAmounts()) {
+			Long bookId = bookAmount.bookId();
+			Book book = books.stream().filter(b -> b.getId().equals(bookId)).findFirst().orElseThrow(() -> new ResourceNotFoundException("Book with ID " + bookId + " does not exist."));
+			if (bookAmount.amount() > book.getAvailableCopies()) {
+				throw new InsufficientAmount("Book with ID " + bookId + " is not available for borrowing.");
+			}
+		}
+
+		if (amount + loanRepository.countLoanByMember_IdAndStatusNot(member.getId(), LoanStatus.RETURNED) > 5) {
+			throw new InsufficientAmount("Borrowing these books would exceed the limit of 5 books per member.");
+		}
+
+		BorrowResponseDTO response = new BorrowResponseDTO(new ArrayList<>());
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+
+		String username = authentication.getPrincipal() instanceof UserPrincipal userPrincipal ? userPrincipal.getUsername() : authentication.getName();
+
+		Librarian librarian = librarianRepository.findByUsername(username).orElseThrow(() -> new ResourceNotFoundException("Librarian with username " + username + " does not exist."));
+
+		// After validation, just loan out the books
+		for (BookAmount bookAmount : borrowRequestDTO.bookAmounts()) {
+			Book book = books.stream().filter(b -> b.getId().equals(bookAmount.bookId())).findFirst().orElseThrow(() -> new ResourceNotFoundException("Book with ID " + bookAmount.bookId() + " does not exist."));
+			for (int i = 0; i < bookAmount.amount(); i++) {
+				Loan loan = new Loan(member, book, LocalDate.now(), LocalDate.now().plusDays(borrowRequestDTO.periodDays()), librarian);
+
+				loanRepository.save(loan);
+				response.loans().add(loanMapper.toDTO(loan));
+			}
+			book.setAvailableCopies(book.getAvailableCopies() - bookAmount.amount());
+			bookRepository.save(book);
+		}
+		return response;
+	}
+
+	@Transactional
+	public BorrowResponseDTO returnBook(ReturnRequestDTO returnRequestDTO) {
+		Member member = memberRepository.findByMembershipNumber(returnRequestDTO.membershipNumber()).orElseThrow(() -> new ResourceNotFoundException("Member with membership number " + returnRequestDTO.membershipNumber() + " does not exist."));
+
+		for (BookAmount bookAmount : returnRequestDTO.bookAmounts()) {
+			Long bookId = bookAmount.bookId();
+			if (!bookRepository.existsByIdAndIsbnIsNull(bookId)) {
+				throw new ResourceNotFoundException("Book with ID " + bookId + " does not exist.");
+			}
+			if (bookAmount.amount() > loanRepository.countLoanByMember_IdAndBook_IdAndStatusNot(member.getId(), bookId, LoanStatus.RETURNED)) {
+				throw new InsufficientAmount("Book with ID " + bookId + " is not available for returning.");
+			}
+		}
+
+		BorrowResponseDTO response = new BorrowResponseDTO(new ArrayList<>());
+		for (BookAmount bookAmount : returnRequestDTO.bookAmounts()) {
+			List<Loan> loans = loanRepository.findTopByMember_IdAndBook_IdAndStatusNot(member.getId(), bookAmount.bookId(), LoanStatus.RETURNED, bookAmount.amount());
+
+			Book book = loans.getFirst().getBook();
+			book.setAvailableCopies(book.getAvailableCopies() + bookAmount.amount());
+			bookRepository.save(book);
+
+			loans.forEach(loan -> {
+				loan.setReturnDate(LocalDate.now());
+				loan.setStatus(LoanStatus.RETURNED);
+			});
+
+			loanRepository.saveAll(loans);
+
+			loans.forEach(loan -> {
+				response.loans().add(loanMapper.toDTO(loan));
+			});
+		}
+		return response;
 	}
 
 

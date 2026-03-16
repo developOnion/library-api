@@ -2,12 +2,14 @@ package com.oop.library_management.service;
 
 import com.oop.library_management.dto.author.AuthorRequestDTO;
 import com.oop.library_management.dto.author.AuthorResponseDTO;
+import com.oop.library_management.dto.search_criteria.AuthorSearchCriteria;
 import com.oop.library_management.exception.ResourceAlreadyExistsException;
 import com.oop.library_management.exception.ResourceNotFoundException;
 import com.oop.library_management.mapper.AuthorMapper;
 import com.oop.library_management.model.author.Author;
 import com.oop.library_management.model.common.PageResponse;
 import com.oop.library_management.repository.AuthorRepository;
+import com.oop.library_management.repository.specification.AuthorSpecifications;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -18,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
-public class AuthorService implements CrudService<AuthorRequestDTO, AuthorResponseDTO>, SearchableService<String, AuthorResponseDTO> {
+public class AuthorService implements CrudService<AuthorRequestDTO, AuthorResponseDTO>, SearchableService<AuthorSearchCriteria, AuthorResponseDTO> {
 
 	private final AuthorRepository authorRepository;
 	private final AuthorMapper authorMapper;
@@ -33,9 +35,10 @@ public class AuthorService implements CrudService<AuthorRequestDTO, AuthorRespon
 
 	@Transactional(readOnly = true)
 	@Override
-	public PageResponse<AuthorResponseDTO> search(String criteria, int page, int size) {
+	public PageResponse<AuthorResponseDTO> search(AuthorSearchCriteria criteria, int page, int size) {
 
-		if (criteria == null || criteria.trim().isEmpty()) {
+		if (criteria == null || (criteria.name() == null || criteria.name().trim().isEmpty()) && criteria.type() == null) {
+			System.out.println("yes");
 			return new PageResponse<>(
 				List.of(),
 				page,
@@ -54,7 +57,7 @@ public class AuthorService implements CrudService<AuthorRequestDTO, AuthorRespon
 				.and(Sort.by("firstName").ascending())
 		);
 
-		Page<Author> authors = authorRepository.findAllByFullNameContainingIgnoreCase(criteria, pageable);
+		Page<Author> authors = authorRepository.findAll(AuthorSpecifications.byCriteria(criteria), pageable);
 		List<AuthorResponseDTO> authorResponseDTOS = authors.stream()
 			.map(authorMapper::toDTO)
 			.toList();

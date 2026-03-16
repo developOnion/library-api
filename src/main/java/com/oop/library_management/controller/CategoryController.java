@@ -2,6 +2,7 @@ package com.oop.library_management.controller;
 
 import com.oop.library_management.dto.category.CategoryRequestDTO;
 import com.oop.library_management.dto.category.CategoryResponseDTO;
+import com.oop.library_management.dto.search_criteria.CategorySearchCriteria;
 import com.oop.library_management.model.common.PageResponse;
 import com.oop.library_management.service.CategoryService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,11 +30,11 @@ public class CategoryController {
 	public ResponseEntity<PageResponse<CategoryResponseDTO>> searchCategoriesByName(
 		@RequestParam(name = "page", defaultValue = "0", required = false) @Min(0) int page,
 		@RequestParam(name = "size", defaultValue = "10", required = false) @Min(1) @Max(100) int size,
-		@RequestParam(required = false) String name
+		@ModelAttribute CategorySearchCriteria criteria
 	) {
 
 		PageResponse<CategoryResponseDTO> categories =
-			categoryService.search(name, page, size);
+			categoryService.search(criteria, page, size);
 
 		return ResponseEntity.ok().body(categories);
 	}

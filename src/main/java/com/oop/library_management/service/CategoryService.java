@@ -2,12 +2,14 @@ package com.oop.library_management.service;
 
 import com.oop.library_management.dto.category.CategoryRequestDTO;
 import com.oop.library_management.dto.category.CategoryResponseDTO;
+import com.oop.library_management.dto.search_criteria.CategorySearchCriteria;
 import com.oop.library_management.exception.ResourceAlreadyExistsException;
 import com.oop.library_management.exception.ResourceNotFoundException;
 import com.oop.library_management.mapper.CategoryMapper;
 import com.oop.library_management.model.category.Category;
 import com.oop.library_management.model.common.PageResponse;
 import com.oop.library_management.repository.CategoryRepository;
+import com.oop.library_management.repository.specification.CategorySpecification;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -18,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
-public class CategoryService implements CrudService<CategoryRequestDTO, CategoryResponseDTO>, SearchableService<String, CategoryResponseDTO> {
+public class CategoryService implements CrudService<CategoryRequestDTO, CategoryResponseDTO>, SearchableService<CategorySearchCriteria, CategoryResponseDTO> {
 
 	private final CategoryRepository categoryRepository;
 	private final CategoryMapper categoryMapper;
@@ -33,9 +35,9 @@ public class CategoryService implements CrudService<CategoryRequestDTO, Category
 
 	@Transactional(readOnly = true)
 	@Override
-	public PageResponse<CategoryResponseDTO> search(String criteria, int page, int size) {
+	public PageResponse<CategoryResponseDTO> search(CategorySearchCriteria criteria, int page, int size) {
 
-		if (criteria == null || criteria.isEmpty()) {
+		if (criteria == null || (criteria.name() == null || criteria.name().trim().isEmpty())) {
 			return new PageResponse<>(
 				List.of(),
 				page,
@@ -54,7 +56,7 @@ public class CategoryService implements CrudService<CategoryRequestDTO, Category
 				.and(Sort.by("name").ascending())
 		);
 
-		Page<Category> categories = categoryRepository.findAllByNameContainingIgnoreCase(criteria, pageable);
+		Page<Category> categories = categoryRepository.findAll(CategorySpecification.byCriteria(criteria), pageable);
 		List<CategoryResponseDTO> categoryResponseDTOS = categories.stream()
 			.map(categoryMapper::toDTO)
 			.toList();

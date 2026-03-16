@@ -73,6 +73,8 @@ public class Author extends BaseEntity {
 		return this.fullName;
 	}
 
+	@PrePersist
+	@PreUpdate
 	public void updateFullName() {
 
 		if (this.firstName != null && this.lastName != null) {
@@ -81,6 +83,8 @@ public class Author extends BaseEntity {
 			this.fullName = this.firstName;
 		} else if (this.lastName != null) {
 			this.fullName = this.lastName;
+		} else {
+			this.fullName = "";
 		}
 	}
 }

@@ -2,6 +2,7 @@ package com.oop.library_management.controller;
 
 import com.oop.library_management.dto.author.AuthorRequestDTO;
 import com.oop.library_management.dto.author.AuthorResponseDTO;
+import com.oop.library_management.dto.search_criteria.AuthorSearchCriteria;
 import com.oop.library_management.model.common.PageResponse;
 import com.oop.library_management.service.AuthorService;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -30,10 +31,10 @@ public class AuthorController {
 	public ResponseEntity<PageResponse<AuthorResponseDTO>> searchAuthorsByName(
 		@RequestParam(name = "page", defaultValue = "0", required = false) @Min(0) int page,
 		@RequestParam(name = "size", defaultValue = "10", required = false) @Min(1) @Max(100) int size,
-		@RequestParam(name = "name", required = false) String name
+		@ModelAttribute AuthorSearchCriteria criteria
 	) {
 
-		PageResponse<AuthorResponseDTO> authors = authorService.search(name, page, size);
+		PageResponse<AuthorResponseDTO> authors = authorService.search(criteria, page, size);
 
 		return ResponseEntity.ok().body(authors);
 	}
