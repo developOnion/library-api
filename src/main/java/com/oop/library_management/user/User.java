@@ -56,6 +56,39 @@ public abstract class User extends BaseEntity {
 		this.role = role;
 	}
 
+	@PrePersist
+	@PreUpdate
+	protected void validate() {
+		validateUsername(this.username);
+		validatePassword(this.password);
+	}
+
+	private void validateUsername(String username) {
+		if (username == null) return;
+		boolean hasOnlyLettersAndNumbers = username.matches("^[a-zA-Z0-9]+$");
+		if (!hasOnlyLettersAndNumbers) {
+			throw new IllegalArgumentException(
+				"Username must contain only letters and numbers");
+		}
+	}
+
+	private void validatePassword(String password) {
+		if (password == null) return;
+		// Note: during registration password is plain text, but later it's encoded.
+		// We should only validate the format for plain text passwords.
+		// Since BCrypt passwords start with $2a$, we can skip validation for them.
+		if (password.startsWith("$2a$") || password.startsWith("$2b$") || password.startsWith("$2y$")) {
+			return;
+		}
+
+		boolean hasNumber = password.matches(".*\\d.*");
+		boolean hasCharacter = password.matches(".*[a-zA-Z].*");
+		if (!hasNumber || !hasCharacter) {
+			throw new IllegalArgumentException(
+				"Password must contain at least one number and one character");
+		}
+	}
+
 	public abstract String getDisplayInfo();
 
 	public String getUsername() {

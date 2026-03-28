@@ -23,6 +23,7 @@ public class UserService {
 	private final JwtService jwtService;
 	private final PasswordEncoder passwordEncoder;
 	private final TokenRepository tokenRepository;
+	private final UserFactory userFactory;
 
 	public UserService(
 		UserRepository userRepository,
@@ -30,7 +31,8 @@ public class UserService {
 		AuthenticationManager authManager,
 		JwtService jwtService,
 		PasswordEncoder passwordEncoder,
-		TokenRepository tokenRepository
+		TokenRepository tokenRepository,
+		UserFactory userFactory
 	) {
 
 		this.userMapper = userMapper;
@@ -39,6 +41,7 @@ public class UserService {
 		this.jwtService = jwtService;
 		this.passwordEncoder = passwordEncoder;
 		this.tokenRepository = tokenRepository;
+		this.userFactory = userFactory;
 	}
 
 	@Transactional
@@ -46,12 +49,10 @@ public class UserService {
 
 		validateUserRequest(request);
 
-		User user = new Member(
-			request.username(),
-			passwordEncoder.encode(request.password()),
-			request.firstName(),
-			request.lastName(),
-			Role.MEMBER
+		User user = userFactory.createUser(
+			request,
+			Role.MEMBER,
+			passwordEncoder.encode(request.password())
 		);
 
 		User savedUser = userRepository.save(user);
@@ -60,17 +61,14 @@ public class UserService {
 	}
 
 	@Transactional
-	public UserResponseDTO registerLibrarian(UserRequestDTO userDTO) {
+	public UserResponseDTO registerLibrarian(UserRequestDTO request) {
 
-		validateLibrarianRequest(userDTO);
+		validateUserRequest(request);
 
-		User user = new Librarian(
-			userDTO.username(),
-			passwordEncoder.encode(userDTO.password()),
-			userDTO.firstName(),
-			userDTO.lastName(),
+		User user = userFactory.createUser(
+			request,
 			Role.LIBRARIAN,
-			userDTO.position()
+			passwordEncoder.encode(request.password())
 		);
 
 		User savedUser = userRepository.save(user);
@@ -179,45 +177,10 @@ public class UserService {
 
 	public record TokenResponse(String accessToken, String refreshToken) {}
 
-	private boolean isValidPassword(String password) {
-
-		boolean hasNumber = password.matches(".*\\d.*");
-		boolean hasCharacter = password.matches(".*[a-zA-Z].*");
-
-		return hasNumber && hasCharacter;
-	}
-
-	private boolean isValidUsername(String username) {
-
-		boolean hasNumber = username.matches(".*\\d.*");
-		boolean hasOnlyLettersAndNumbers = username.matches("^[a-zA-Z0-9]+$");
-
-		return hasOnlyLettersAndNumbers && hasNumber;
-	}
-
-	private void validateLibrarianRequest(UserRequestDTO userDTO) {
-
-		validateUserRequest(userDTO);
-
-		if (userDTO.position() == null) {
-			throw new InvalidUserDataException("Librarian position is required");
-		}
-	}
-
 	private void validateUserRequest(UserRequestDTO userDTO) {
 
 		if (userRepository.existsByUsername(userDTO.username())) {
 			throw new InvalidUserDataException("Username already exists");
-		}
-
-		if (!isValidUsername(userDTO.username())) {
-			throw new InvalidUserDataException(
-				"Username must be 3-30 characters long and contain only letters and numbers");
-		}
-
-		if (!isValidPassword(userDTO.password())) {
-			throw new InvalidUserDataException(
-				"Password must contain at least one number and one character");
 		}
 	}
 }

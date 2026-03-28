@@ -1,14 +1,10 @@
 package com.oop.library_management.loan;
 
+import com.oop.library_management.book.Book;
 import com.oop.library_management.book.BookRepository;
+import com.oop.library_management.common.PageResponse;
 import com.oop.library_management.exception.InsufficientAmount;
 import com.oop.library_management.exception.ResourceNotFoundException;
-import com.oop.library_management.loan.LoanHistoryMapper;
-import com.oop.library_management.loan.LoanMapper;
-import com.oop.library_management.book.Book;
-import com.oop.library_management.common.PageResponse;
-import com.oop.library_management.loan.Loan;
-import com.oop.library_management.loan.LoanStatus;
 import com.oop.library_management.security.UserPrincipal;
 import com.oop.library_management.user.Librarian;
 import com.oop.library_management.user.LibrarianRepository;
@@ -96,16 +92,22 @@ public class LoanService {
 	@Transactional
 	public BorrowResponseDTO borrowBook(BorrowRequestDTO borrowRequestDTO) {
 
-		Integer amount = 0;
-		for (BookAmount bookAmount : borrowRequestDTO.bookAmounts()) {
-			amount += bookAmount.amount();
-		}
-		if (amount > 5) {
-			throw new InsufficientAmount("Cannot borrow more than 5 books at a time.");
-		}
+		int amount = borrowRequestDTO.bookAmounts().stream()
+			.mapToInt(BookAmount::amount)
+			.sum();
 
 		//  Validation
-		Member member = memberRepository.findByMembershipNumber(borrowRequestDTO.membershipNumber()).orElseThrow(() -> new ResourceNotFoundException("Member with membership number " + borrowRequestDTO.membershipNumber() + " does not exist."));
+		Member member = memberRepository.findByMembershipNumber(borrowRequestDTO.membershipNumber())
+			.orElseThrow(() -> new ResourceNotFoundException("Member with membership number " + borrowRequestDTO.membershipNumber() + " does not exist."));
+
+		// Define our borrowing policy using a lambda
+		// (Strategy Pattern via Functional Interface)
+		BorrowingPolicy standardPolicy = (requested, current) -> (requested + current) <= 5;
+		int currentlyBorrowedCount = loanRepository.countLoanByMember_IdAndStatusNot(member.getId(), LoanStatus.RETURNED);
+
+		if (!standardPolicy.isAllowed(amount, currentlyBorrowedCount)) {
+			throw new InsufficientAmount("Borrowing " + amount + " book(s) would exceed the limit of 5 total borrowed books (already have " + currentlyBorrowedCount + ").");
+		}
 
 		List<Long> bookIds = borrowRequestDTO.bookAmounts().stream().map(BookAmount::bookId).toList();
 		List<Book> books = bookRepository.findAllById(bookIds);
@@ -120,13 +122,8 @@ public class LoanService {
 			}
 		}
 
-		if (amount + loanRepository.countLoanByMember_IdAndStatusNot(member.getId(), LoanStatus.RETURNED) > 5) {
-			throw new InsufficientAmount("Borrowing these books would exceed the limit of 5 books per member.");
-		}
-
 		BorrowResponseDTO response = new BorrowResponseDTO(new ArrayList<>());
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
 
 		String username = authentication.getPrincipal() instanceof UserPrincipal userPrincipal ? userPrincipal.getUsername() : authentication.getName();
 
@@ -141,7 +138,7 @@ public class LoanService {
 				loanRepository.save(loan);
 				response.loans().add(loanMapper.toDTO(loan));
 			}
-			book.setAvailableCopies(book.getAvailableCopies() - bookAmount.amount());
+			book.borrow(bookAmount.amount());
 			bookRepository.save(book);
 		}
 		return response;
@@ -166,13 +163,10 @@ public class LoanService {
 			List<Loan> loans = loanRepository.findTopByMember_IdAndBook_IdAndStatusNot(member.getId(), bookAmount.bookId(), LoanStatus.RETURNED, bookAmount.amount());
 
 			Book book = loans.getFirst().getBook();
-			book.setAvailableCopies(book.getAvailableCopies() + bookAmount.amount());
+			book.returnCopies(bookAmount.amount());
 			bookRepository.save(book);
 
-			loans.forEach(loan -> {
-				loan.setReturnDate(LocalDate.now());
-				loan.setStatus(LoanStatus.RETURNED);
-			});
+			loans.forEach(Loan::returnBook);
 
 			loanRepository.saveAll(loans);
 
