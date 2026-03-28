@@ -5,6 +5,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -22,23 +23,48 @@ public class JwtService {
 	@Value("${application.security.jwt.secret-key}")
 	private String SECRET_KEY;
 
-	@Value("${application.security.jwt.expiration}")
-	private Long EXPIRATION_TIME;
+	@Value("${application.security.jwt.access-token-expiration}")
+	private Long ACCESS_TOKEN_EXPIRATION;
 
-	public String generateToken(String username, Role role) {
+	@Value("${application.security.jwt.refresh-token-expiration}")
+	private Long REFRESH_TOKEN_EXPIRATION;
+
+	public String generateAccessToken(String username, Role role) {
 
 		Map<String, Object> claims = new HashMap<>();
 		claims.put("role", role.name());
 
+		return buildToken(claims, username, ACCESS_TOKEN_EXPIRATION);
+	}
+
+	public String generateRefreshToken(String username) {
+		return buildToken(new HashMap<>(), username, REFRESH_TOKEN_EXPIRATION);
+	}
+
+	private String buildToken(
+		Map<String, Object> claims,
+		String username,
+		long expiration
+	) {
 		return Jwts.builder()
 			.claims()
 			.add(claims)
 			.subject(username)
 			.issuedAt(new Date(System.currentTimeMillis()))
-			.expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+			.expiration(new Date(System.currentTimeMillis() + expiration))
 			.and()
 			.signWith(generateKey())
 			.compact();
+	}
+
+	public ResponseCookie createRefreshTokenCookie(String refreshToken) {
+		return ResponseCookie.from("refresh_token", refreshToken)
+			.httpOnly(true)
+			.secure(false)
+			.path("/api/v1/auth/refresh-token")
+			.maxAge(REFRESH_TOKEN_EXPIRATION / 1000)
+			.sameSite("Strict")
+			.build();
 	}
 
 	public Key generateKey() {

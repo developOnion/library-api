@@ -1,7 +1,9 @@
 package com.oop.library_management.user;
 
+import com.oop.library_management.auth.Token;
+import com.oop.library_management.auth.TokenRepository;
+import com.oop.library_management.auth.TokenType;
 import com.oop.library_management.auth.AuthRequestDTO;
-import com.oop.library_management.auth.AuthResponseDTO;
 import com.oop.library_management.exception.AuthenticationException;
 import com.oop.library_management.exception.InvalidUserDataException;
 import com.oop.library_management.user.UserMapper;
@@ -20,13 +22,15 @@ public class UserService {
 	private final AuthenticationManager authManager;
 	private final JwtService jwtService;
 	private final PasswordEncoder passwordEncoder;
+	private final TokenRepository tokenRepository;
 
 	public UserService(
 		UserRepository userRepository,
 		UserMapper userMapper,
 		AuthenticationManager authManager,
 		JwtService jwtService,
-		PasswordEncoder passwordEncoder
+		PasswordEncoder passwordEncoder,
+		TokenRepository tokenRepository
 	) {
 
 		this.userMapper = userMapper;
@@ -34,6 +38,7 @@ public class UserService {
 		this.authManager = authManager;
 		this.jwtService = jwtService;
 		this.passwordEncoder = passwordEncoder;
+		this.tokenRepository = tokenRepository;
 	}
 
 	@Transactional
@@ -74,7 +79,7 @@ public class UserService {
 	}
 
 	@Transactional
-	public AuthResponseDTO authenticate(AuthRequestDTO loginRequest) {
+	public TokenResponse authenticate(AuthRequestDTO loginRequest) {
 
 		try {
 			// Authenticate user credentials
@@ -93,16 +98,86 @@ public class UserService {
 			user.setLastLogin(java.time.LocalDateTime.now());
 			userRepository.save(user);
 
-			String jwtToken = jwtService.generateToken(
+			String accessToken = jwtService.generateAccessToken(
 				user.getUsername(),
 				user.getRole()
 			);
 
-			return new AuthResponseDTO(jwtToken);
+			String refreshToken = jwtService.generateRefreshToken(
+				user.getUsername()
+			);
+
+			revokeAllUserTokens(user);
+			saveUserToken(user, accessToken);
+			saveUserToken(user, refreshToken);
+
+			return new TokenResponse(accessToken, refreshToken);
 		} catch (org.springframework.security.core.AuthenticationException e) {
 			throw new AuthenticationException("Invalid username or password");
 		}
 	}
+
+	private void revokeAllUserTokens(User user) {
+		var validUserTokens = tokenRepository.findAllValidTokenByUser(user.getId());
+		if (validUserTokens.isEmpty())
+			return;
+		validUserTokens.forEach(token -> {
+			token.setExpired(true);
+			token.setRevoked(true);
+		});
+		tokenRepository.saveAll(validUserTokens);
+	}
+
+	private void saveUserToken(User user, String jwtToken) {
+		var token = new Token(jwtToken, TokenType.BEARER, false, false, user);
+		tokenRepository.save(token);
+	}
+
+	@Transactional
+	public void revokeAllTokens(String username) {
+		User user = userRepository.findByUsername(username)
+			.orElseThrow(() -> new AuthenticationException("User not found"));
+		revokeAllUserTokens(user);
+	}
+
+	@Transactional
+	public TokenResponse refreshToken(String refreshToken) {
+
+		String username = jwtService.extractUsername(refreshToken);
+
+		if (username != null) {
+
+			User user = userRepository.findByUsername(username)
+				.orElseThrow(() -> new AuthenticationException("User not found"));
+
+			// Load user details for validation
+			org.springframework.security.core.userdetails.UserDetails userDetails =
+				new com.oop.library_management.security.UserPrincipal(user);
+
+			if (jwtService.validateToken(refreshToken, userDetails)) {
+
+				String accessToken = jwtService.generateAccessToken(
+					user.getUsername(),
+					user.getRole()
+				);
+
+				// Rotation: generate a new refresh token as well
+				String newRefreshToken = jwtService.generateRefreshToken(
+					user.getUsername()
+				);
+
+				revokeAllUserTokens(user);
+				saveUserToken(user, accessToken);
+				saveUserToken(user, newRefreshToken);
+
+				return new TokenResponse(accessToken, newRefreshToken);
+			}
+		}
+
+		throw new AuthenticationException("Invalid refresh token");
+	}
+
+	public record TokenResponse(String accessToken, String refreshToken) {}
 
 	private boolean isValidPassword(String password) {
 
