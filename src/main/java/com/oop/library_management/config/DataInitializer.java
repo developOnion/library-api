@@ -1,14 +1,13 @@
 package com.oop.library_management.config;
 
-import com.oop.library_management.model.author.Author;
-import com.oop.library_management.model.author.AuthorType;
-import com.oop.library_management.model.book.Book;
-import com.oop.library_management.model.category.Category;
-import com.oop.library_management.model.user.*;
-import com.oop.library_management.repository.AuthorRepository;
-import com.oop.library_management.repository.BookRepository;
-import com.oop.library_management.repository.CategoryRepository;
-import com.oop.library_management.repository.UserRepository;
+import com.oop.library_management.author.Author;
+import com.oop.library_management.author.AuthorRepository;
+import com.oop.library_management.author.AuthorType;
+import com.oop.library_management.book.BookRepository;
+import com.oop.library_management.category.CategoryRepository;
+import com.oop.library_management.book.Book;
+import com.oop.library_management.category.Category;
+import com.oop.library_management.user.*;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;

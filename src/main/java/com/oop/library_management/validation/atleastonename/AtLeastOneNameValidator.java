@@ -1,6 +1,6 @@
 package com.oop.library_management.validation.atleastonename;
 
-import com.oop.library_management.dto.author.AuthorRequestDTO;
+import com.oop.library_management.author.AuthorRequestDTO;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
@@ -14,6 +14,6 @@ public class AtLeastOneNameValidator implements ConstraintValidator<AtLeastOneNa
 		}
 
 		return (authorDTO.firstName() != null && !authorDTO.firstName().isBlank()) ||
-				(authorDTO.lastName() != null && !authorDTO.lastName().isBlank());
+			(authorDTO.lastName() != null && !authorDTO.lastName().isBlank());
 	}
 }

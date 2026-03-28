@@ -1,6 +1,6 @@
 package com.oop.library_management.security;
 
-import com.oop.library_management.model.user.Role;
+import com.oop.library_management.user.Role;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -31,14 +31,14 @@ public class JwtService {
 		claims.put("role", role.name());
 
 		return Jwts.builder()
-				.claims()
-				.add(claims)
-				.subject(username)
-				.issuedAt(new Date(System.currentTimeMillis()))
-				.expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
-				.and()
-				.signWith(generateKey())
-				.compact();
+			.claims()
+			.add(claims)
+			.subject(username)
+			.issuedAt(new Date(System.currentTimeMillis()))
+			.expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+			.and()
+			.signWith(generateKey())
+			.compact();
 	}
 
 	public Key generateKey() {
@@ -80,10 +80,10 @@ public class JwtService {
 	private Claims extractAllClaims(String token) {
 
 		return Jwts.parser()
-				.verifyWith((SecretKey) generateKey())
-				.build()
-				.parseSignedClaims(token)
-				.getPayload();
+			.verifyWith((SecretKey) generateKey())
+			.build()
+			.parseSignedClaims(token)
+			.getPayload();
 	}
 
 }
