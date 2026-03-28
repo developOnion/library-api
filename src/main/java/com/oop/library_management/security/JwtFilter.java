@@ -1,5 +1,6 @@
 package com.oop.library_management.security;
 
+import com.oop.library_management.auth.TokenRepository;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.security.SignatureException;
@@ -23,14 +24,17 @@ public class JwtFilter extends OncePerRequestFilter {
 
 	private final JwtService jwtUtil;
 	private final UserDetailsServiceImpl userDetailsService;
+	private final TokenRepository tokenRepository;
 
 	public JwtFilter(
 			JwtService jwtUtil,
-			UserDetailsServiceImpl userDetailsService
+			UserDetailsServiceImpl userDetailsService,
+			TokenRepository tokenRepository
 	) {
 
 		this.jwtUtil = jwtUtil;
 		this.userDetailsService = userDetailsService;
+		this.tokenRepository = tokenRepository;
 	}
 
 	@Override
@@ -65,17 +69,25 @@ public class JwtFilter extends OncePerRequestFilter {
 
 				UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
+				boolean isTokenValid = tokenRepository.findByToken(token)
+					.map(t -> !t.isExpired() && !t.isRevoked())
+					.orElse(false);
+
 				if (jwtUtil.validateToken(token, userDetails)) {
+					if (isTokenValid) {
+						UsernamePasswordAuthenticationToken authToken =
+								new UsernamePasswordAuthenticationToken(
+										userDetails,
+										null,
+										userDetails.getAuthorities()
+								);
+						authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-					UsernamePasswordAuthenticationToken authToken =
-							new UsernamePasswordAuthenticationToken(
-									userDetails,
-									null,
-									userDetails.getAuthorities()
-							);
-					authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-					SecurityContextHolder.getContext().setAuthentication(authToken);
+						SecurityContextHolder.getContext().setAuthentication(authToken);
+					} else {
+						handleJwtException(response, "Token has been revoked or expired");
+						return;
+					}
 				}
 			}
 

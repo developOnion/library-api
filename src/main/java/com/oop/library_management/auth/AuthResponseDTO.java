@@ -1,6 +1,9 @@
 package com.oop.library_management.auth;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public record AuthResponseDTO(
-	String token
+	@JsonProperty("access_token")
+	String accessToken
 ) {
 }
