@@ -59,6 +59,14 @@ public class Loan extends BaseEntity {
 		this.status = LoanStatus.BORROWED;
 	}
 
+	public void returnBook() {
+		if (this.status == LoanStatus.RETURNED) {
+			throw new IllegalStateException("Book is already returned.");
+		}
+		this.status = LoanStatus.RETURNED;
+		this.returnDate = LocalDate.now();
+	}
+
 	public Member getMember() {
 		return member;
 	}
@@ -79,7 +87,7 @@ public class Loan extends BaseEntity {
 		return returnDate;
 	}
 
-	public void setReturnDate(LocalDate returnDate) {
+	private void setReturnDate(LocalDate returnDate) {
 		this.returnDate = returnDate;
 	}
 
@@ -87,15 +95,11 @@ public class Loan extends BaseEntity {
 		return status;
 	}
 
-	public void setStatus(LoanStatus status) {
+	private void setStatus(LoanStatus status) {
 		this.status = status;
 	}
 
 	public Librarian getLibrarian() {
 		return librarian;
-	}
-
-	public void setLibrarian(Librarian librarian) {
-		this.librarian = librarian;
 	}
 }

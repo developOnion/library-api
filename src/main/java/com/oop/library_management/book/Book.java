@@ -3,6 +3,7 @@ package com.oop.library_management.book;
 import com.oop.library_management.author.Author;
 import com.oop.library_management.category.Category;
 import com.oop.library_management.common.BaseEntity;
+import com.oop.library_management.exception.InsufficientAmount;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -60,11 +61,45 @@ public class Book extends BaseEntity {
 		this.availableCopies = totalCopies;
 	}
 
+	public void borrow(int amount) {
+		if (amount <= 0) {
+			throw new IllegalArgumentException("Amount to borrow must be positive.");
+		}
+		if (this.availableCopies < amount) {
+			throw new InsufficientAmount("Not enough copies available for book: " + this.title);
+		}
+		this.availableCopies -= amount;
+	}
+
+	public void returnCopies(int amount) {
+		if (amount <= 0) {
+			throw new IllegalArgumentException("Amount to return must be positive.");
+		}
+		if (this.availableCopies + amount > this.totalCopies) {
+			throw new IllegalArgumentException("Cannot return more copies than total owned.");
+		}
+		this.availableCopies += amount;
+	}
+
+	public void updateTotalCopies(int newTotal) {
+		if (newTotal < 0) {
+			throw new IllegalArgumentException("Total copies cannot be negative.");
+		}
+		int currentlyBorrowed = this.totalCopies - this.availableCopies;
+		if (newTotal < currentlyBorrowed) {
+			throw new IllegalArgumentException(
+				"New total copies (" + newTotal + ") cannot be less than currently borrowed copies (" + currentlyBorrowed + ")."
+			);
+		}
+		this.totalCopies = newTotal;
+		this.availableCopies = newTotal - currentlyBorrowed;
+	}
+
 	public Long getVersion() {
 		return version;
 	}
 
-	public void setVersion(Long version) {
+	private void setVersion(Long version) {
 		this.version = version;
 	}
 
@@ -104,7 +139,7 @@ public class Book extends BaseEntity {
 		return totalCopies;
 	}
 
-	public void setTotalCopies(Integer totalCopies) {
+	private void setTotalCopies(Integer totalCopies) {
 		this.totalCopies = totalCopies;
 	}
 
@@ -112,7 +147,7 @@ public class Book extends BaseEntity {
 		return availableCopies;
 	}
 
-	public void setAvailableCopies(Integer availableCopies) {
+	private void setAvailableCopies(Integer availableCopies) {
 		this.availableCopies = availableCopies;
 	}
 
