@@ -133,12 +133,7 @@ public class BookService implements CrudService<BookRequestDTO, BookResponseDTO>
 		Book existingBook = bookRepository.findById(id)
 			.orElseThrow(() -> new ResourceNotFoundException("Book not found"));
 
-		int borrowedCopies = existingBook.getTotalCopies() - existingBook.getAvailableCopies();
-		if (bookRequestDTO.totalCopies() < borrowedCopies) {
-			throw new IllegalArgumentException(
-				"Total copies cannot be less than the number of borrowed copies"
-			);
-		}
+		existingBook.updateTotalCopies(bookRequestDTO.totalCopies());
 
 		Set<Author> authors = new HashSet<>(
 			authorRepository.findAllById(bookRequestDTO.authorIds())
@@ -158,8 +153,6 @@ public class BookService implements CrudService<BookRequestDTO, BookResponseDTO>
 
 		existingBook.setTitle(bookRequestDTO.title());
 		existingBook.setIsbn(bookRequestDTO.isbn());
-		existingBook.setTotalCopies(bookRequestDTO.totalCopies());
-		existingBook.setAvailableCopies(bookRequestDTO.totalCopies() - borrowedCopies);
 		existingBook.setAuthors(authors);
 		existingBook.setCategories(categories);
 
