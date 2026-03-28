@@ -92,16 +92,22 @@ public class LoanService {
 	@Transactional
 	public BorrowResponseDTO borrowBook(BorrowRequestDTO borrowRequestDTO) {
 
-		Integer amount = 0;
-		for (BookAmount bookAmount : borrowRequestDTO.bookAmounts()) {
-			amount += bookAmount.amount();
-		}
-		if (amount > 5) {
-			throw new InsufficientAmount("Cannot borrow more than 5 books at a time.");
-		}
+		int amount = borrowRequestDTO.bookAmounts().stream()
+			.mapToInt(BookAmount::amount)
+			.sum();
 
 		//  Validation
-		Member member = memberRepository.findByMembershipNumber(borrowRequestDTO.membershipNumber()).orElseThrow(() -> new ResourceNotFoundException("Member with membership number " + borrowRequestDTO.membershipNumber() + " does not exist."));
+		Member member = memberRepository.findByMembershipNumber(borrowRequestDTO.membershipNumber())
+			.orElseThrow(() -> new ResourceNotFoundException("Member with membership number " + borrowRequestDTO.membershipNumber() + " does not exist."));
+
+		// Define our borrowing policy using a lambda
+		// (Strategy Pattern via Functional Interface)
+		BorrowingPolicy standardPolicy = (requested, current) -> (requested + current) <= 5;
+		int currentlyBorrowedCount = loanRepository.countLoanByMember_IdAndStatusNot(member.getId(), LoanStatus.RETURNED);
+
+		if (!standardPolicy.isAllowed(amount, currentlyBorrowedCount)) {
+			throw new InsufficientAmount("Borrowing " + amount + " book(s) would exceed the limit of 5 total borrowed books (already have " + currentlyBorrowedCount + ").");
+		}
 
 		List<Long> bookIds = borrowRequestDTO.bookAmounts().stream().map(BookAmount::bookId).toList();
 		List<Book> books = bookRepository.findAllById(bookIds);
@@ -114,10 +120,6 @@ public class LoanService {
 			if (bookAmount.amount() > book.getAvailableCopies()) {
 				throw new InsufficientAmount("Book with ID " + bookId + " is not available for borrowing.");
 			}
-		}
-
-		if (amount + loanRepository.countLoanByMember_IdAndStatusNot(member.getId(), LoanStatus.RETURNED) > 5) {
-			throw new InsufficientAmount("Borrowing these books would exceed the limit of 5 books per member.");
 		}
 
 		BorrowResponseDTO response = new BorrowResponseDTO(new ArrayList<>());
