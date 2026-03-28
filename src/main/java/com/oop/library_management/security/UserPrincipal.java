@@ -1,6 +1,6 @@
 package com.oop.library_management.security;
 
-import com.oop.library_management.model.user.User;
+import com.oop.library_management.user.User;
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

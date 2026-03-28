@@ -37,3 +37,11 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### Environment variables ###
+.env
+.env.local
+.env.*.local
+
+### Agent ###
+GEMINI.md

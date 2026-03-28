@@ -1,7 +1,7 @@
 package com.oop.library_management.security;
 
-import com.oop.library_management.model.user.User;
-import com.oop.library_management.repository.UserRepository;
+import com.oop.library_management.user.User;
+import com.oop.library_management.user.UserRepository;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -14,7 +14,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 	private final UserRepository userRepository;
 
 	public UserDetailsServiceImpl(
-			UserRepository userRepository
+		UserRepository userRepository
 	) {
 		this.userRepository = userRepository;
 	}
@@ -22,10 +22,10 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 	@Override
 	@Transactional(readOnly = true)
 	public UserDetails loadUserByUsername(String username)
-			throws UsernameNotFoundException {
+		throws UsernameNotFoundException {
 
 		User user = userRepository.findByUsername(username)
-				.orElseThrow(() -> new UsernameNotFoundException("User not found"));
+			.orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
 		return new UserPrincipal(user);
 	}
