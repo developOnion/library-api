@@ -1,4 +1,4 @@
-package com.oop.library_management.exception;
+package com.oop.library_management.common;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 

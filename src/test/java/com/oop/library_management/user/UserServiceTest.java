@@ -1,8 +1,8 @@
 package com.oop.library_management.user;
 
 import com.oop.library_management.auth.TokenRepository;
+import com.oop.library_management.config.JwtService;
 import com.oop.library_management.exception.InvalidUserDataException;
-import com.oop.library_management.security.JwtService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -12,9 +12,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -50,7 +48,7 @@ class UserServiceTest {
 
 		when(userRepository.existsByUsername("user1")).thenReturn(false);
 		when(passwordEncoder.encode("pass123")).thenReturn("encodedPass");
-		
+
 		Member member = mock(Member.class);
 		when(userFactory.createUser(eq(request), eq(Role.MEMBER), eq("encodedPass")))
 			.thenReturn(member);
@@ -94,7 +92,7 @@ class UserServiceTest {
 		when(userRepository.existsByUsername("user1")).thenReturn(true);
 
 		assertThrows(InvalidUserDataException.class, () -> userService.registerMember(request));
-		
+
 		verify(userFactory, never()).createUser(any(), any(), anyString());
 		verify(userRepository, never()).save(any());
 	}

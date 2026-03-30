@@ -1,6 +1,6 @@
 package com.oop.library_management.auth;
 
-import com.oop.library_management.security.JwtService;
+import com.oop.library_management.config.JwtService;
 import com.oop.library_management.user.UserService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;

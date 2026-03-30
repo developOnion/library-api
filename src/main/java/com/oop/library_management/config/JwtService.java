@@ -1,9 +1,9 @@
-package com.oop.library_management.security;
+package com.oop.library_management.config;
 
 import com.oop.library_management.user.Role;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SignatureException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -112,4 +112,12 @@ public class JwtService {
 			.getPayload();
 	}
 
+	public String mapExceptionToClientMessage(JwtException e) {
+		return switch (e) {
+			case ExpiredJwtException expiredJwtException -> "JWT expired";
+			case SignatureException signatureException -> "Invalid JWT signature";
+			case MalformedJwtException malformedJwtException -> "Malformed JWT";
+			case null, default -> "Invalid token";
+		};
+	}
 }

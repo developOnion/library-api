@@ -1,11 +1,11 @@
 package com.oop.library_management.loan;
 
+import com.oop.library_management.auth.UserPrincipal;
 import com.oop.library_management.book.Book;
 import com.oop.library_management.book.BookRepository;
 import com.oop.library_management.common.PageResponse;
 import com.oop.library_management.exception.InsufficientAmount;
 import com.oop.library_management.exception.ResourceNotFoundException;
-import com.oop.library_management.security.UserPrincipal;
 import com.oop.library_management.user.Librarian;
 import com.oop.library_management.user.LibrarianRepository;
 import com.oop.library_management.user.Member;

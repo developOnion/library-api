@@ -1,6 +1,7 @@
 package com.oop.library_management.exception;
 
 import com.fasterxml.jackson.core.JsonParseException;
+import com.oop.library_management.common.ErrorResponseDTO;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

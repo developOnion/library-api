@@ -2,6 +2,7 @@ package com.oop.library_management.loan;
 
 
 import com.oop.library_management.common.PageResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/loans")
+@Tag(name = "Loan Management", description = "Endpoints for managing book loans and returns")
 public class LoanController {
 
 	private final LoanService loanService;

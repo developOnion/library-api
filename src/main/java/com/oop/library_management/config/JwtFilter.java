@@ -1,15 +1,15 @@
-package com.oop.library_management.security;
+package com.oop.library_management.config;
 
 import com.oop.library_management.auth.TokenRepository;
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.MalformedJwtException;
-import io.jsonwebtoken.security.SignatureException;
+import com.oop.library_management.auth.UserDetailsServiceImpl;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.jspecify.annotations.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -17,7 +17,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 
 @Component
 public class JwtFilter extends OncePerRequestFilter {
@@ -25,23 +24,28 @@ public class JwtFilter extends OncePerRequestFilter {
 	private final JwtService jwtUtil;
 	private final UserDetailsServiceImpl userDetailsService;
 	private final TokenRepository tokenRepository;
+	private final JwtService jwtService;
+	private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
 	public JwtFilter(
-			JwtService jwtUtil,
-			UserDetailsServiceImpl userDetailsService,
-			TokenRepository tokenRepository
+		JwtService jwtUtil,
+		UserDetailsServiceImpl userDetailsService,
+		TokenRepository tokenRepository,
+		JwtService jwtService, JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint
 	) {
 
 		this.jwtUtil = jwtUtil;
 		this.userDetailsService = userDetailsService;
 		this.tokenRepository = tokenRepository;
+		this.jwtService = jwtService;
+		this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
 	}
 
 	@Override
 	protected void doFilterInternal(
-			HttpServletRequest request,
-			@NonNull HttpServletResponse response,
-			@NonNull FilterChain filterChain
+		HttpServletRequest request,
+		@NonNull HttpServletResponse response,
+		@NonNull FilterChain filterChain
 	) throws ServletException, IOException {
 
 		if (request.getServletPath().contains("/api/v1/auth")) {
@@ -64,7 +68,7 @@ public class JwtFilter extends OncePerRequestFilter {
 			username = jwtUtil.extractUsername(token);
 
 			if (username != null &&
-					SecurityContextHolder.getContext().getAuthentication() == null
+				SecurityContextHolder.getContext().getAuthentication() == null
 			) {
 
 				UserDetails userDetails = userDetailsService.loadUserByUsername(username);
@@ -76,42 +80,28 @@ public class JwtFilter extends OncePerRequestFilter {
 				if (jwtUtil.validateToken(token, userDetails)) {
 					if (isTokenValid) {
 						UsernamePasswordAuthenticationToken authToken =
-								new UsernamePasswordAuthenticationToken(
-										userDetails,
-										null,
-										userDetails.getAuthorities()
-								);
+							new UsernamePasswordAuthenticationToken(
+								userDetails,
+								null,
+								userDetails.getAuthorities()
+							);
 						authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
 						SecurityContextHolder.getContext().setAuthentication(authToken);
 					} else {
-						handleJwtException(response, "Token has been revoked or expired");
+						jwtAuthenticationEntryPoint.commence(request, response, new AuthenticationException("Token is invalid or has been revoked") {
+						});
 						return;
 					}
 				}
 			}
 
 			filterChain.doFilter(request, response);
-		} catch (SignatureException e) {
-			handleJwtException(response, "Invalid JWT signature");
-		} catch (ExpiredJwtException e) {
-			handleJwtException(response, "JWT token has expired");
-		} catch (MalformedJwtException e) {
-			handleJwtException(response, "Invalid JWT token");
+		} catch (JwtException e) {
+			SecurityContextHolder.clearContext();
+			String clientMessage = jwtService.mapExceptionToClientMessage(e);
+			jwtAuthenticationEntryPoint.commence(request, response, new AuthenticationException(clientMessage) {
+			});
 		}
-	}
-
-	private void handleJwtException(
-			HttpServletResponse response,
-			String message
-	) throws IOException {
-
-		response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-		response.setContentType("application/json");
-		response.getWriter().write(
-				"{\"timestamp\":\"" + LocalDateTime.now() + "\"," +
-						"\"status\":401," +
-						"\"message\":\"" + message + "\"}"
-		);
 	}
 }

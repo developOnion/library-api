@@ -1,13 +1,9 @@
 package com.oop.library_management.user;
 
-import com.oop.library_management.auth.Token;
-import com.oop.library_management.auth.TokenRepository;
-import com.oop.library_management.auth.TokenType;
-import com.oop.library_management.auth.AuthRequestDTO;
+import com.oop.library_management.auth.*;
+import com.oop.library_management.config.JwtService;
 import com.oop.library_management.exception.AuthenticationException;
 import com.oop.library_management.exception.InvalidUserDataException;
-import com.oop.library_management.user.UserMapper;
-import com.oop.library_management.security.JwtService;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -150,7 +146,7 @@ public class UserService {
 
 			// Load user details for validation
 			org.springframework.security.core.userdetails.UserDetails userDetails =
-				new com.oop.library_management.security.UserPrincipal(user);
+				new UserPrincipal(user);
 
 			if (jwtService.validateToken(refreshToken, userDetails)) {
 
@@ -175,12 +171,13 @@ public class UserService {
 		throw new AuthenticationException("Invalid refresh token");
 	}
 
-	public record TokenResponse(String accessToken, String refreshToken) {}
-
 	private void validateUserRequest(UserRequestDTO userDTO) {
 
 		if (userRepository.existsByUsername(userDTO.username())) {
 			throw new InvalidUserDataException("Username already exists");
 		}
+	}
+
+	public record TokenResponse(String accessToken, String refreshToken) {
 	}
 }

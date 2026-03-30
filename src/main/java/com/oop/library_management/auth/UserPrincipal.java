@@ -1,4 +1,4 @@
-package com.oop.library_management.security;
+package com.oop.library_management.auth;
 
 import com.oop.library_management.user.User;
 import org.jspecify.annotations.Nullable;
