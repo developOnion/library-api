@@ -3,10 +3,10 @@ services:
     container_name: mysql-library
     image: mysql:8.0
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: library
-      MYSQL_USER: onion
-      MYSQL_PASSWORD: ring
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
       - "3308:3306"
     volumes:

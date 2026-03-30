@@ -12,6 +12,10 @@ spring:
         format_sql: true
     database: mysql
     database-platform: org.hibernate.dialect.MySQLDialect
+  flyway:
+    placeholders:
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_PASSWORD_HASH: '${ADMIN_PASSWORD_HASH}'
 application:
   security:
     jwt:
