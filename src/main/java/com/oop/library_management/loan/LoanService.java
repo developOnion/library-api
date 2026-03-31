@@ -96,7 +96,7 @@ public class LoanService {
 
 		for (BookAmount bookAmount : returnRequestDTO.bookAmounts()) {
 			Long bookId = bookAmount.bookId();
-			if (!bookRepository.existsByIdAndIsbnIsNull(bookId)) {
+			if (!bookRepository.existsById(bookId)) {
 				throw new ResourceNotFoundException("Book with ID " + bookId + " does not exist.");
 			}
 			if (bookAmount.amount() > loanRepository.countLoanByMember_IdAndBook_IdAndStatusNot(member.getId(), bookId, LoanStatus.RETURNED)) {
