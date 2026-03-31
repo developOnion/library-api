@@ -3,17 +3,12 @@ package com.oop.library_management.loan;
 import com.oop.library_management.auth.UserPrincipal;
 import com.oop.library_management.book.Book;
 import com.oop.library_management.book.BookRepository;
-import com.oop.library_management.common.PageResponse;
 import com.oop.library_management.exception.InsufficientAmount;
 import com.oop.library_management.exception.ResourceNotFoundException;
 import com.oop.library_management.user.Librarian;
 import com.oop.library_management.user.LibrarianRepository;
 import com.oop.library_management.user.Member;
 import com.oop.library_management.user.MemberRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -31,63 +26,14 @@ public class LoanService {
 	private final LoanRepository loanRepository;
 	private final LoanMapper loanMapper;
 	private final LibrarianRepository librarianRepository;
-	private final LoanHistoryMapper loanHistoryMapper;
 
-	public LoanService(MemberRepository memberRepository, BookRepository bookRepository, LoanRepository loanRepository, LoanMapper loanMapper, LibrarianRepository librarianRepository, LoanHistoryMapper loanHistoryMapper) {
+	public LoanService(MemberRepository memberRepository, BookRepository bookRepository, LoanRepository loanRepository, LoanMapper loanMapper, LibrarianRepository librarianRepository) {
 		this.memberRepository = memberRepository;
 		this.bookRepository = bookRepository;
 		this.loanRepository = loanRepository;
 		this.loanMapper = loanMapper;
 		this.librarianRepository = librarianRepository;
-		this.loanHistoryMapper = loanHistoryMapper;
 	}
-
-	@Transactional(readOnly = true)
-	public PageResponse<LoanHistoryResponseDTO> findLoanById(Long userId, int page, int size) {
-
-		Pageable pageable = PageRequest.of(page, size, Sort.by("loanDate").descending());
-		Page<Loan> loans = loanRepository.findByMember_Id(userId, pageable);
-		List<LoanHistoryResponseDTO> bookResponseDTOs = loans.stream().map(loanHistoryMapper::toDTO).toList();
-
-		return new PageResponse<>(bookResponseDTOs, loans.getNumber(), loans.getSize(), loans.getTotalElements(), loans.getTotalPages(), loans.isFirst(), loans.isLast());
-	}
-
-	// Get loan with userId
-	@Transactional(readOnly = true)
-	public PageResponse<LoanHistoryResponseDTO> getLoanHistoryByUserId(Long userId, int page, int size) {
-
-		//validation
-		if (!memberRepository.existsById(userId)) {
-			throw new ResourceNotFoundException("Member with ID " + userId + " does not exist.");
-		}
-
-		Pageable pageable = PageRequest.of(page, size);
-		Page<Loan> loans = loanRepository.findByMember_Id(userId, pageable);
-		return loanMapper.buildPageResponse(loans);
-	}
-
-	// Get loan with userId and filter with status
-	@Transactional(readOnly = true)
-	public PageResponse<LoanHistoryResponseDTO> getLoanHistoryByUserId(Long userId, String status, int page, int size) {
-
-		//validation
-		if (!memberRepository.existsById(userId)) {
-			throw new ResourceNotFoundException("Member with ID " + userId + " does not exist.");
-		}
-
-		LoanStatus loanStatus;
-		try {
-			loanStatus = LoanStatus.valueOf(status.toUpperCase());
-		} catch (IllegalArgumentException e) {
-			throw new IllegalArgumentException("Invalid loan status: " + status);
-		}
-
-		Pageable pageable = PageRequest.of(page, size);
-		Page<Loan> loans = loanRepository.findByMember_IdAndStatus(userId, loanStatus, pageable);
-
-		return loanMapper.buildPageResponse(loans);
-	}
-
 
 	@Transactional
 	public BorrowResponseDTO borrowBook(BorrowRequestDTO borrowRequestDTO) {
@@ -175,32 +121,5 @@ public class LoanService {
 			});
 		}
 		return response;
-	}
-
-
-	// get all loan from all user and filter with status
-	@Transactional(readOnly = true)
-	public PageResponse<LoanHistoryResponseDTO> getLoanHistory(String status, int page, int size) {
-
-		LoanStatus loanStatus;
-		try {
-			loanStatus = LoanStatus.valueOf(status.toUpperCase());
-		} catch (IllegalArgumentException e) {
-			throw new IllegalArgumentException("Invalid loan status: " + status);
-		}
-
-		Pageable pageable = PageRequest.of(page, size);
-		Page<Loan> loans = loanRepository.findByStatus(loanStatus, pageable);
-		return loanMapper.buildPageResponse(loans);
-	}
-
-
-	// get all loan from all user
-	@Transactional(readOnly = true)
-	public PageResponse<LoanHistoryResponseDTO> getLoanHistory(int page, int size) {
-
-		Pageable pageable = PageRequest.of(page, size);
-		Page<Loan> loans = loanRepository.findAll(pageable);
-		return loanMapper.buildPageResponse(loans);
 	}
 }
