@@ -1,7 +1,6 @@
 package com.oop.library_management.auth;
 
 import com.oop.library_management.config.JwtService;
-import com.oop.library_management.user.UserService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -15,15 +14,14 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Authentication", description = "Endpoints for user authentication")
 public class AuthController {
 
-	private final UserService userService;
+	private final AuthService authService;
 	private final JwtService jwtService;
 
 	public AuthController(
-		UserService userService,
+		AuthService authService,
 		JwtService jwtService
 	) {
-
-		this.userService = userService;
+		this.authService = authService;
 		this.jwtService = jwtService;
 	}
 
@@ -33,7 +31,7 @@ public class AuthController {
 		HttpServletResponse response
 	) {
 
-		UserService.TokenResponse tokenResponse = userService.authenticate(loginRequest);
+		TokenResponseDTO tokenResponse = authService.authenticate(loginRequest);
 
 		attachRefreshTokenCookie(response, tokenResponse.refreshToken());
 
@@ -46,7 +44,7 @@ public class AuthController {
 		@CookieValue(name = "refresh_token") String refreshToken,
 		HttpServletResponse response
 	) {
-		UserService.TokenResponse tokenResponse = userService.refreshToken(refreshToken);
+		TokenResponseDTO tokenResponse = authService.refreshToken(refreshToken);
 
 		attachRefreshTokenCookie(response, tokenResponse.refreshToken());
 
@@ -58,7 +56,7 @@ public class AuthController {
 	public ResponseEntity<Void> logout(HttpServletResponse response, java.security.Principal principal) {
 
 		if (principal != null) {
-			userService.revokeAllTokens(principal.getName());
+			authService.revokeAllTokens(principal.getName());
 		}
 
 		ResponseCookie cookie = ResponseCookie.from("refresh_token", "")

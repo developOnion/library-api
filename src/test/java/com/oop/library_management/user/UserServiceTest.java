@@ -1,14 +1,11 @@
 package com.oop.library_management.user;
 
-import com.oop.library_management.auth.TokenRepository;
-import com.oop.library_management.config.JwtService;
 import com.oop.library_management.exception.InvalidUserDataException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -23,13 +20,7 @@ class UserServiceTest {
 	@Mock
 	private UserMapper userMapper;
 	@Mock
-	private AuthenticationManager authManager;
-	@Mock
-	private JwtService jwtService;
-	@Mock
 	private PasswordEncoder passwordEncoder;
-	@Mock
-	private TokenRepository tokenRepository;
 	@Mock
 	private UserFactory userFactory;
 
