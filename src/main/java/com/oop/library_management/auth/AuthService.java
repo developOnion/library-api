@@ -2,6 +2,10 @@ package com.oop.library_management.auth;
 
 import com.oop.library_management.config.JwtService;
 import com.oop.library_management.exception.AuthenticationException;
+import com.oop.library_management.token.Token;
+import com.oop.library_management.token.TokenRepository;
+import com.oop.library_management.token.TokenResponseDTO;
+import com.oop.library_management.token.TokenType;
 import com.oop.library_management.user.User;
 import com.oop.library_management.user.UserRepository;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -16,6 +20,7 @@ import java.time.LocalDateTime;
 @Service
 public class AuthService {
 
+	private static final int REFRESH_GRACE_PERIOD_SECONDS = 10;
 	private final UserRepository userRepository;
 	private final AuthenticationManager authManager;
 	private final JwtService jwtService;
@@ -78,36 +83,47 @@ public class AuthService {
 		String username = jwtService.extractUsername(refreshToken);
 
 		if (username != null) {
-			User user = userRepository.findByUsername(username)
+			// Serialize refresh requests for the same user to prevent race conditions
+			User user = userRepository.findByUsernameWithLock(username)
 				.orElseThrow(() -> new AuthenticationException("User not found"));
 
 			UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-			if (jwtService.validateToken(refreshToken, userDetails)) {
+			// First, check if there's a recently generated token (concurrency grace period)
+			final var validTokens = tokenRepository.findAllValidTokenByUser(user.getId());
+			final var recentToken = validTokens.stream()
+				.filter(t -> t.getCreatedAt() != null &&
+					t.getCreatedAt().isAfter(LocalDateTime.now().minusSeconds(REFRESH_GRACE_PERIOD_SECONDS)))
+				.findFirst();
 
+			if (recentToken.isPresent()) {
+				// If we found a recently created token, return it instead of generating a new one
+				return new TokenResponseDTO(recentToken.get().getToken(), refreshToken);
+			}
+
+			// If no recent token, validate the incoming refresh token against the DB
+			boolean isRefreshTokenValid = tokenRepository.findByToken(refreshToken)
+				.map(t -> !t.isExpired() && !t.isRevoked())
+				.orElse(false);
+
+			if (isRefreshTokenValid && jwtService.validateToken(refreshToken, userDetails)) {
 				String accessToken = jwtService.generateAccessToken(
 					user.getUsername(),
 					user.getRole()
 				);
-
-				String newRefreshToken = jwtService.generateRefreshToken(
-					user.getUsername()
-				);
-
 				revokeAllUserTokens(user);
 				saveUserToken(user, accessToken);
-				saveUserToken(user, newRefreshToken);
 
-				return new TokenResponseDTO(accessToken, newRefreshToken);
+				return new TokenResponseDTO(accessToken, refreshToken);
 			}
 		}
 
-		throw new AuthenticationException("Invalid refresh token");
+		throw new AuthenticationException("Invalid or revoked refresh token");
 	}
 
 	@Transactional
 	public void revokeAllTokens(String username) {
-		User user = userRepository.findByUsername(username)
+		User user = userRepository.findByUsernameWithLock(username)
 			.orElseThrow(() -> new AuthenticationException("User not found"));
 		revokeAllUserTokens(user);
 	}

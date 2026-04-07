@@ -1,6 +1,6 @@
 services:
   mysql:
-    container_name: mysql-library
+    container_name: library-mysql-db
     image: mysql:8.0
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
@@ -10,14 +10,35 @@ services:
     ports:
       - "3308:3306"
     volumes:
-      - mysql-:/var/lib/mysql
+      - mysql-data:/var/lib/mysql
     networks:
       - library-network
     restart: unless-stopped
+  api:
+    container_name: library-api
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_URL=jdbc:mysql://mysql:3306/library
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-dev}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - JWT_ACCESS_EXPIRATION_TIME=${JWT_ACCESS_EXPIRATION_TIME}
+      - JWT_REFRESH_EXPIRATION_TIME=${JWT_REFRESH_EXPIRATION_TIME}
+      - ADMIN_USERNAME=${ADMIN_USERNAME}
+      - ADMIN_PASSWORD_HASH=${ADMIN_PASSWORD_HASH}
+    depends_on:
+      - mysql
+    networks:
+      - library-network
+    restart: always
 
 networks:
   library-network:
     driver: bridge
 
 volumes:
-  mysql-:
+  mysql-data:
+    driver: local

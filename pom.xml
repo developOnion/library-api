@@ -9,10 +9,10 @@
 		<relativePath/>
 	</parent>
 	<groupId>com.oop</groupId>
-	<artifactId>library_management</artifactId>
+	<artifactId>library_api</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>library_management</name>
-	<description>Library Management Project</description>
+	<name>library_api</name>
+	<description>Library API</description>
 	<url/>
 	<licenses>
 		<license/>
@@ -113,6 +113,10 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webmvc-test</artifactId>
 			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
 	</dependencies>
 
