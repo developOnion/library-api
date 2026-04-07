@@ -86,7 +86,7 @@ class LoanServiceTest {
 		when(member.getId()).thenReturn(1L);
 		when(memberRepository.findByMembershipNumber(membershipNumber)).thenReturn(Optional.of(member));
 
-		when(bookRepository.existsByIdAndIsbnIsNull(1L)).thenReturn(true);
+		when(bookRepository.existsById(1L)).thenReturn(true);
 		when(loanRepository.countLoanByMember_IdAndBook_IdAndStatusNot(1L, 1L, LoanStatus.RETURNED)).thenReturn(1);
 
 		Book book = mock(Book.class);
