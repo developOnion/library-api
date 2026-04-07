@@ -1,6 +1,8 @@
 package com.oop.library_management.auth;
 
 import com.oop.library_management.config.JwtService;
+import com.oop.library_management.exception.AuthenticationException;
+import com.oop.library_management.token.TokenResponseDTO;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -41,9 +43,12 @@ public class AuthController {
 
 	@PostMapping("/refresh-token")
 	public ResponseEntity<AuthResponseDTO> refreshToken(
-		@CookieValue(name = "refresh_token") String refreshToken,
+		@CookieValue(name = "refresh_token", required = false) String refreshToken,
 		HttpServletResponse response
 	) {
+		if (refreshToken == null || refreshToken.isBlank()) {
+			throw new AuthenticationException("Refresh token is missing");
+		}
 		TokenResponseDTO tokenResponse = authService.refreshToken(refreshToken);
 
 		attachRefreshTokenCookie(response, tokenResponse.refreshToken());

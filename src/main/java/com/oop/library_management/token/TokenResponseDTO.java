@@ -1,4 +1,4 @@
-package com.oop.library_management.auth;
+package com.oop.library_management.token;
 
 public record TokenResponseDTO(
 	String accessToken,

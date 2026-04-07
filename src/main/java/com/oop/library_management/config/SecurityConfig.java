@@ -2,7 +2,6 @@ package com.oop.library_management.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -19,24 +18,21 @@ import static org.springframework.security.config.http.SessionCreationPolicy.STA
 public class SecurityConfig {
 
 	private final JwtFilter JwtFilter;
-	private final AuthenticationProvider authenticationProvider;
 	private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
 	public SecurityConfig(
 		JwtFilter jwtFilter,
-		AuthenticationProvider authenticationProvider,
 		JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint
 	) {
 
 		this.JwtFilter = jwtFilter;
-		this.authenticationProvider = authenticationProvider;
 		this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
 	}
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(
 		HttpSecurity httpSecurity
-	) {
+	) throws Exception {
 
 		return httpSecurity
 			.cors(withDefaults())
@@ -55,7 +51,6 @@ public class SecurityConfig {
 					.sessionCreationPolicy(STATELESS)
 			)
 			.exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
-			.authenticationProvider(authenticationProvider)
 			.addFilterBefore(JwtFilter, UsernamePasswordAuthenticationFilter.class)
 			.build();
 	}

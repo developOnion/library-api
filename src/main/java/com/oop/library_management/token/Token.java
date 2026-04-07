@@ -1,15 +1,12 @@
-package com.oop.library_management.auth;
+package com.oop.library_management.token;
 
+import com.oop.library_management.common.BaseEntity;
 import com.oop.library_management.user.User;
 import jakarta.persistence.*;
 
 @Entity
 @Table(name = "tokens")
-public class Token {
-
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+public class Token extends BaseEntity {
 
 	@Column(unique = true, nullable = false)
 	private String token;
@@ -39,24 +36,12 @@ public class Token {
 		this.user = user;
 	}
 
-	public Long getId() {
-		return id;
-	}
-
 	public String getToken() {
 		return token;
 	}
 
 	public void setToken(String token) {
 		this.token = token;
-	}
-
-	public TokenType getTokenType() {
-		return tokenType;
-	}
-
-	public void setTokenType(TokenType tokenType) {
-		this.tokenType = tokenType;
 	}
 
 	public boolean isRevoked() {

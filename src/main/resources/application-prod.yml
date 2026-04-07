@@ -1,0 +1,26 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    placeholders:
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+application:
+  security:
+    jwt:
+      secret-key: ${JWT_SECRET_KEY}
+      access-token-expiration: ${JWT_ACCESS_EXPIRATION_TIME}
+      refresh-token-expiration: ${JWT_REFRESH_EXPIRATION_TIME}

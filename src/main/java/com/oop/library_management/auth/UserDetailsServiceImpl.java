@@ -2,6 +2,7 @@ package com.oop.library_management.auth;
 
 import com.oop.library_management.user.User;
 import com.oop.library_management.user.UserRepository;
+import org.jspecify.annotations.NullMarked;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -20,6 +21,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 	}
 
 	@Override
+	@NullMarked
 	@Transactional(readOnly = true)
 	public UserDetails loadUserByUsername(String username)
 		throws UsernameNotFoundException {

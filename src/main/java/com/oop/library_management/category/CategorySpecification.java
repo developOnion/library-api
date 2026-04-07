@@ -1,6 +1,5 @@
 package com.oop.library_management.category;
 
-import com.oop.library_management.category.Category;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
