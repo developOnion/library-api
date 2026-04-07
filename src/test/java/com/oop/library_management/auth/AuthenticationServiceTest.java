@@ -87,10 +87,14 @@ class AuthenticationServiceTest {
 		when(testUser.getUsername()).thenReturn("testuser");
 		when(testUser.getRole()).thenReturn(Role.MEMBER);
 		when(jwtService.extractUsername(refreshToken)).thenReturn("testuser");
-		when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+		when(userRepository.findByUsernameWithLock("testuser")).thenReturn(Optional.of(testUser));
 		UserDetails testUserDetails = mock(UserDetails.class);
 		when(userDetailsService.loadUserByUsername("testuser")).thenReturn(testUserDetails);
 		when(jwtService.validateToken(refreshToken, testUserDetails)).thenReturn(true);
+		Token mockToken = mock(Token.class);
+		when(mockToken.isExpired()).thenReturn(false);
+		when(mockToken.isRevoked()).thenReturn(false);
+		when(tokenRepository.findByToken(refreshToken)).thenReturn(Optional.of(mockToken));
 		when(jwtService.generateAccessToken("testuser", Role.MEMBER)).thenReturn("new-access-token");
 		when(jwtService.generateRefreshToken("testuser")).thenReturn("new-refresh-token");
 		when(tokenRepository.findAllValidTokenByUser(1L)).thenReturn(List.of());
@@ -99,9 +103,9 @@ class AuthenticationServiceTest {
 
 		assertNotNull(response);
 		assertEquals("new-access-token", response.accessToken());
-		assertEquals("new-refresh-token", response.refreshToken());
+		assertEquals(refreshToken, response.refreshToken());
 
-		verify(tokenRepository, times(2)).save(any(Token.class));
+		verify(tokenRepository, times(1)).save(any(Token.class));
 	}
 
 	@Test
@@ -110,7 +114,7 @@ class AuthenticationServiceTest {
 		String refreshToken = "invalid-refresh-token";
 
 		when(jwtService.extractUsername(refreshToken)).thenReturn("testuser");
-		when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+		when(userRepository.findByUsernameWithLock("testuser")).thenReturn(Optional.of(testUser));
 		UserDetails testUserDetails = mock(UserDetails.class);
 		when(userDetailsService.loadUserByUsername("testuser")).thenReturn(testUserDetails);
 		when(jwtService.validateToken(refreshToken, testUserDetails)).thenReturn(false);
@@ -124,7 +128,7 @@ class AuthenticationServiceTest {
 		String username = "testuser";
 		Token token = mock(Token.class);
 
-		when(userRepository.findByUsername(username)).thenReturn(Optional.of(testUser));
+		when(userRepository.findByUsernameWithLock(username)).thenReturn(Optional.of(testUser));
 		when(testUser.getId()).thenReturn(1L);
 		when(tokenRepository.findAllValidTokenByUser(1L)).thenReturn(List.of(token));
 
