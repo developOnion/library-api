@@ -16,91 +16,66 @@ A robust RESTful API for a Library Management System built with Spring Boot 4.0.
 - **Database Versioning**: Flyway-managed schema migrations and initial data seeding.
 - **Documentation**: Interactive API documentation with Swagger UI.
 
-## Core Endpoints & Example Payloads
+## API Endpoints & Example Payloads
 
 ### 1. Authentication
-**POST** `/api/v1/auth/login`
-```json
-{
-  "username": "onion",
-  "password": "@Onionadmindev66$"
-}
-```
+- **POST** `/api/v1/auth/login` (Public)
+  ```json
+  { "username": "onion", "password": "@Onionadmindev66$" }
+  ```
+- **POST** `/api/v1/auth/refresh-token` (Public, requires `refresh_token` cookie)
+- **POST** `/api/v1/auth/logout` (Authenticated)
 
 ### 2. User Registration
-#### Member
-**POST** `/api/v1/users/register/members` (Requires LIBRARIAN authority)
-```json
-{
-  "username": "sovath123",
-  "password": "@Sovath123",
-  "firstName": "Ngov",
-  "lastName": "Lysovath"
-}
-```
-
-#### Librarian
-**POST** `/api/v1/users/register/librarians` (Requires LIBRARIAN authority)
-```json
-{
-  "username": "new_librarian",
-  "password": "@SecurePassword123",
-  "firstName": "Jane",
-  "lastName": "Doe",
-  "position": "HEAD_LIBRARIAN"
-}
-```
+- **POST** `/api/v1/users/register/members` (Requires LIBRARIAN)
+  ```json
+  { "username": "sovath123", "password": "@Sovath123", "firstName": "Ngov", "lastName": "Lysovath" }
+  ```
+- **POST** `/api/v1/users/register/librarians` (Requires LIBRARIAN)
+  ```json
+  { "username": "new_lib", "password": "@SecurePass123", "firstName": "Jane", "lastName": "Doe", "position": "HEAD_LIBRARIAN" }
+  ```
 
 ### 3. Book Management
-**POST** `/api/v1/books` (Requires LIBRARIAN authority)
-```json
-{
-  "title": "Foundation",
-  "isbn": "978-0553293357",
-  "totalCopies": 5,
-  "authorIds": [100],
-  "categoryIds": [105]
-}
-```
+- **GET** `/api/v1/books` (Public) - Query params: `page`, `size`
+- **GET** `/api/v1/books/{id}` (Public)
+- **POST** `/api/v1/books` (Requires LIBRARIAN)
+  ```json
+  { "title": "Foundation", "isbn": "978-0553293357", "totalCopies": 5, "authorIds": [100], "categoryIds": [105] }
+  ```
+- **PUT** `/api/v1/books/{id}` (Requires LIBRARIAN)
+  ```json
+  { "title": "Foundation and Empire", "isbn": "978-0553293357", "totalCopies": 10, "authorIds": [100], "categoryIds": [105] }
+  ```
+- **DELETE** `/api/v1/books/{id}` (Requires LIBRARIAN)
 
-### 4. Loan System
-#### Borrow Books
-**POST** `/api/v1/loans/borrow` (Requires LIBRARIAN authority)
-```json
-{
-  "membershipNumber": "MEM-00003",
-  "bookAmounts": [
-    {
-      "bookId": 500,
-      "amount": 3
-    },
-    {
-      "bookId": 274,
-      "amount": 2
-    }
-  ],
-  "periodDays": 7
-}
-```
+### 4. Author Management
+- **GET** `/api/v1/authors` (Public) - Query params: `firstName`, `lastName`, `page`, `size`
+- **GET** `/api/v1/authors/{id}` (Requires LIBRARIAN)
+- **POST** `/api/v1/authors` (Requires LIBRARIAN)
+  ```json
+  { "firstName": "Isaac", "lastName": "Asimov", "type": "AUTHOR" }
+  ```
 
-#### Return Books
-**PUT** `/api/v1/loans/return` (Requires LIBRARIAN authority)
-```json
-{
-  "membershipNumber": "MEM-00003",
-  "bookAmounts": [
-    {
-      "bookId": 500,
-      "amount": 1
-    }
-  ]
-}
-```
+### 5. Category Management
+- **GET** `/api/v1/categories` (Public) - Query params: `name`, `page`, `size`
+- **GET** `/api/v1/categories/{id}` (Requires LIBRARIAN)
+- **POST** `/api/v1/categories` (Requires LIBRARIAN)
+  ```json
+  { "name": "Science Fiction" }
+  ```
 
-#### Loan History
-**GET** `/api/v1/loans/history/{userId}?status=BORROWED&page=0&size=10`
-- Accessible by LIBRARIAN for any user.
-- Accessible by MEMBER for their own ID.
+### 6. Loan Management
+- **POST** `/api/v1/loans/borrow` (Requires LIBRARIAN)
+  ```json
+  { "membershipNumber": "MEM-00003", "bookAmounts": [{ "bookId": 500, "amount": 3 }], "periodDays": 7 }
+  ```
+- **PUT** `/api/v1/loans/return` (Requires LIBRARIAN)
+  ```json
+  { "membershipNumber": "MEM-00003", "bookAmounts": [{ "bookId": 500, "amount": 1 }] }
+  ```
+- **GET** `/api/v1/loans/history` (Requires LIBRARIAN) - Query params: `status`, `page`, `size`
+- **GET** `/api/v1/loans/history/{userId}` (LIBRARIAN or Owner) - Query params: `status`, `page`, `size`
 
 ## Technology Stack
 
