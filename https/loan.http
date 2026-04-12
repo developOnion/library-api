@@ -1,0 +1,99 @@
+@base_url = http://localhost:8080/api/v1
+
+### Login as member
+# @name member_login
+POST {{base_url}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "sovath123",
+  "password": "@Sovath123"
+}
+
+> {%
+    client.global.set("member_token", response.body.access_token);
+%}
+
+### Login as librarian
+# @name librarian_login
+POST {{base_url}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "onion",
+  "password": "@Onionadmindev66$"
+}
+
+> {%
+    client.global.set("librarian_token", response.body.access_token);
+%}
+
+### Loan books
+POST {{base_url}}/loans/borrow
+Content-Type: application/json
+Authorization: Bearer {{librarian_token}}
+
+{
+  "membershipNumber": "MEM-00003",
+  "bookAmounts": [
+    {
+      "bookId": 500,
+      "amount": 3
+    },
+    {
+      "bookId": 274,
+      "amount": 2
+    }
+  ],
+  "periodDays": 7
+}
+
+### Display history after loaning
+GET {{base_url}}/loans/history/3
+Authorization: Bearer {{member_token}}
+
+### Return a fraction of the borrowed books
+PUT {{base_url}}/loans/return
+Content-Type: application/json
+Authorization: Bearer {{librarian_token}}
+
+{
+  "membershipNumber": "MEM-00003",
+  "bookAmounts": [
+    {
+      "bookId": 500,
+      "amount": 1
+    },
+    {
+      "bookId": 274,
+      "amount": 1
+    }
+  ]
+}
+
+### display history after returning a fraction
+GET {{base_url}}/loans/history/3
+Authorization: Bearer {{member_token}}
+
+### return the rest of the borrowed books
+PUT {{base_url}}/loans/return
+Content-Type: application/json
+Authorization: Bearer {{librarian_token}}
+
+{
+  "membershipNumber": "MEM-00003",
+  "bookAmounts": [
+    {
+      "bookId": 500,
+      "amount": 2
+    },
+    {
+      "bookId": 274,
+      "amount": 1
+    }
+  ]
+}
+
+### display history after returning everything
+GET {{base_url}}/loans/history/3
+Authorization: Bearer {{member_token}}

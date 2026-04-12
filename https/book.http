@@ -1,0 +1,63 @@
+@base_url = http://localhost:8080/api/v1
+
+### Login to get access token
+# @name login
+POST {{base_url}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "onion",
+  "password": "@Onionadmindev66$"
+}
+
+> {%
+    client.global.set("auth_token", response.body.access_token);
+%}
+
+### Get all books with pagination (Sorting is handled server-side by createdAt and title)
+GET {{base_url}}/books?page=0&size=10
+Authorization: Bearer {{auth_token}}
+
+### Create a new book
+POST {{base_url}}/books
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "title": "Foundation",
+  "isbn": "978-0553293357",
+  "totalCopies": 5,
+  "authorIds": [
+    100
+  ],
+  "categoryIds": [
+    105
+  ]
+}
+
+### GET the created book by ID
+GET {{base_url}}/books/1100
+Authorization: Bearer {{auth_token}}
+
+### Update an existing 1100
+PUT {{base_url}}/books/1100
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "title": "Foundation and Empire",
+  "isbn": "978-0553293357",
+  "totalCopies": 10,
+  "authorIds": [
+    100
+  ],
+  "categoryIds": [
+    105
+  ]
+}
+
+### Delete a book by id
+DELETE {{base_url}}/books/1100
+Authorization: Bearer {{auth_token}}
+
+

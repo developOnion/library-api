@@ -1,0 +1,27 @@
+@base_url = http://localhost:8080/api/v1
+
+### Login as a librarian
+# @name login
+POST {{base_url}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "onion",
+  "password": "@Onionadmindev66$"
+}
+
+> {%
+    client.global.set("auth_token", response.body.access_token);
+%}
+
+### Create a new member account
+POST {{base_url}}/users/register/members
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "username": "sovath123",
+  "password": "@Sovath123",
+  "firstName": "Ngov",
+  "lastName": "Lysovath"
+}

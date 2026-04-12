@@ -251,7 +251,6 @@ public class GlobalExceptionHandler {
 		System.err.println("--- UNHANDLED EXCEPTION ---");
 		System.err.println("Exception type: " + ex.getClass().getName());
 		System.err.println("Message: " + ex.getMessage());
-		ex.printStackTrace();
 
 		ErrorResponseDTO error = createErrorResponse(
 			HttpStatus.INTERNAL_SERVER_ERROR,
